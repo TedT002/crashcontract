@@ -8,6 +8,7 @@ members = [
     "crates/cc-workload",
     "crates/cc-cli",
     "engines/toy-correct",
+    "engines/toy-mutants",
 ]
 
 [workspace.package]

@@ -46,3 +46,14 @@ dependencies = [
  "cc-trace",
  "cc-workload",
 ]
+
+[[package]]
+name = "toy-mutants"
+version = "0.1.0"
+dependencies = [
+ "cc-adapter",
+ "cc-model",
+ "cc-trace",
+ "cc-workload",
+ "toy-correct",
+]

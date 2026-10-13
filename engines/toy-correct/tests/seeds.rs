@@ -21,6 +21,7 @@ fn cfg_for(seed: u64) -> ToyConfig {
             SyncPolicy::OnSyncOnly
         },
         checkpoint_every: if (seed / 2).is_multiple_of(2) { 0 } else { 7 },
+        mutation: None,
     }
 }
 

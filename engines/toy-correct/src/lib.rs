@@ -32,5 +32,7 @@
 mod crc32;
 mod db;
 pub mod format;
+mod mutation;
 
 pub use db::{SyncPolicy, ToyConfig, ToyDb};
+pub use mutation::Mutation;

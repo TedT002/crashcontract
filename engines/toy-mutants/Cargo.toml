@@ -1,0 +1,22 @@
+[package]
+name = "toy-mutants"
+description = "CrashContract mutant kataloğu: bilerek hatalı toy motorlar ve 'araç yakalıyor mu' testleri"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+# Mutasyonlar toy-correct'in yapılandırma alanıdır (ayrı kod kopyası yok — bkz. toy_correct::Mutation).
+toy-correct = { path = "../toy-correct" }
+# Beklenen ihlal sınıfları.
+cc-model = { path = "../../crates/cc-model" }
+
+[dev-dependencies]
+# Yakalama testleri runner'ı ve seed'li iş yükünü kullanır.
+cc-adapter = { path = "../../crates/cc-adapter" }
+cc-trace = { path = "../../crates/cc-trace" }
+cc-workload = { path = "../../crates/cc-workload" }
+
+[lints]
+workspace = true

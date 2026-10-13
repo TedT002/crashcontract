@@ -12,15 +12,20 @@ use std::process::ExitCode;
 use std::time::Instant;
 
 use cc_adapter::StorageAdapter;
-use cc_adapter::runner::{CutSelection, RunConfig, RunError, SeedOutcome, run_case};
+use cc_adapter::runner::{
+    CutSelection, FailureCase, Finding, RunConfig, RunError, SeedOutcome, run_case,
+};
 use cc_trace::CrashConfig;
 use cc_workload::{WorkloadConfig, generate};
-use toy_correct::{SyncPolicy, ToyConfig, ToyDb};
+use toy_correct::{Mutation, SyncPolicy, ToyConfig, ToyDb};
 
 const USAGE: &str = "\
 kullanım: crashcontract run [seçenekler]
+         crashcontract mutants [--seeds A..B] [--jobs N]
 
-  --engine toy-correct            test edilen motor (varsayılan: toy-correct)
+run — seed aralığını koşar, çökme durumlarını yargılar:
+  --engine toy-correct|toy-mutant:<ad>
+                                  test edilen motor (varsayılan: toy-correct)
   --seeds A..B                    seed aralığı, B hariç (varsayılan: 0..100)
   --policy every-commit|on-sync|mixed
                                   toy senkronizasyon politikası (varsayılan: mixed = seed%2)
@@ -29,6 +34,13 @@ kullanım: crashcontract run [seçenekler]
   --torn                          sektör seviyesinde yırtık yazmaları da dene
   --jobs N                        paralel iş parçacığı (varsayılan: çekirdek sayısı)
   --workdir DIR                   çalışma dizini (varsayılan: geçici dizin)
+
+mutants — her mutantı aralıktaki her seed'de koşar (tüm kesmeler + yırtık yazma), yakalama
+  oranını basar (varsayılan seed 0..100).
+  çıkış kodu 0 yalnız TÜM mutantlar yakalandıysa.
+
+mutantlar: skip-commit-fsync, unlink-before-dir-sync, drop-last-record, ignore-tombstones,
+           no-fsync-before-rename, accept-corrupt-record, split-txn-records
 
 çıkış kodu: 0 bulgu yok, 1 bulgu var, 2 kullanım/altyapı hatası";
 
@@ -41,6 +53,8 @@ enum Mixed<T> {
 #[derive(Debug)]
 struct RunArgs {
     engine: String,
+    /// `toy-mutant:<ad>` ise mutasyon.
+    mutation: Option<Mutation>,
     seeds: std::ops::Range<u64>,
     policy: Mixed<SyncPolicy>,
     checkpoint_every: Mixed<u32>,
@@ -58,6 +72,7 @@ fn parse_num<T: std::str::FromStr>(flag: &str, v: &str) -> Result<T, String> {
 fn parse_run(args: &[String]) -> Result<RunArgs, String> {
     let mut a = RunArgs {
         engine: "toy-correct".into(),
+        mutation: None,
         seeds: 0..100,
         policy: Mixed::Mixed,
         checkpoint_every: Mixed::Mixed,
@@ -112,9 +127,13 @@ fn parse_run(args: &[String]) -> Result<RunArgs, String> {
             _ => return Err(format!("bilinmeyen seçenek '{flag}'")),
         }
     }
-    if a.engine != "toy-correct" {
-        return Err(format!("bilinmeyen motor '{}'", a.engine));
-    }
+    a.mutation = match a.engine.strip_prefix("toy-mutant:") {
+        Some(name) => {
+            Some(Mutation::from_name(name).ok_or_else(|| format!("bilinmeyen mutant '{name}'"))?)
+        }
+        None if a.engine == "toy-correct" => None,
+        None => return Err(format!("bilinmeyen motor '{}'", a.engine)),
+    };
     Ok(a)
 }
 
@@ -131,6 +150,7 @@ fn toy_config(a: &RunArgs, seed: u64) -> ToyConfig {
             Mixed::Mixed if (seed / 2).is_multiple_of(2) => 0,
             Mixed::Mixed => 7,
         },
+        mutation: a.mutation,
     }
 }
 
@@ -241,10 +261,135 @@ fn cmd_run(args: &[String]) -> Result<ExitCode, String> {
     }
 }
 
+/// Bulgunun kısa sınıf adı (tablolar için).
+fn finding_kind(f: &Finding) -> String {
+    match f {
+        Finding::Violation(v) => format!("{:?}", v.kind),
+        Finding::RecoveryFailed(_) => "RecoveryFailed".into(),
+        Finding::ScanFailed(_) => "ScanFailed".into(),
+        Finding::IntegrityFailed(_) => "IntegrityFailed".into(),
+    }
+}
+
+/// Bir mutantın avı: kaç seed'de yakalandı, ilk yakalama ve ona kadar denenen durum sayısı.
+struct Hunt {
+    mutation: Mutation,
+    seeds_tried: u64,
+    seeds_caught: u64,
+    /// İlk yakalamaya kadar (o seed dahil) denenen çökme durumu.
+    states_to_first: usize,
+    first: Option<(u64, FailureCase)>,
+}
+
+/// Mutantı aralıktaki HER seed'de koşar (tüm kesmeler + yırtık yazma: M6 ancak "ortada yırtık
+/// kayıt" durumlarıyla yakalanır). Seed başına ilk bulguda durulur; oran = yakalanan seed / seed.
+fn hunt(m: Mutation, a: &RunArgs, workdir: &Path) -> Result<Hunt, String> {
+    let rc = RunConfig {
+        crash: CrashConfig {
+            torn_writes: true,
+            ..CrashConfig::default()
+        },
+        cuts: CutSelection::All,
+    };
+    let mut h = Hunt {
+        mutation: m,
+        seeds_tried: 0,
+        seeds_caught: 0,
+        states_to_first: 0,
+        first: None,
+    };
+    for seed in a.seeds.clone() {
+        let cfg = ToyConfig {
+            mutation: Some(m),
+            ..toy_config(a, seed)
+        };
+        let ops = generate(seed, &WorkloadConfig::default());
+        let o = run_case::<ToyDb>(ops, &cfg, workdir, seed, &rc)
+            .map_err(|e| format!("{} seed {seed}: altyapı hatası: {e}", m.name()))?;
+        h.seeds_tried += 1;
+        if h.first.is_none() {
+            h.states_to_first += o.states;
+        }
+        if let Some(f) = o.failure {
+            h.seeds_caught += 1;
+            if h.first.is_none() {
+                h.first = Some((seed, f));
+            }
+        }
+    }
+    Ok(h)
+}
+
+fn cmd_mutants(args: &[String]) -> Result<ExitCode, String> {
+    let mut a = parse_run(args)?;
+    if args.iter().all(|x| x != "--seeds") {
+        a.seeds = 0..100;
+    }
+    let workdir = a.workdir.clone().unwrap_or_else(|| {
+        std::env::temp_dir().join(format!("crashcontract-mut-{}", std::process::id()))
+    });
+    println!(
+        "crashcontract mutants: seed={}..{} (yapılandırma mixed), tüm kesmeler, yırtık yazma açık",
+        a.seeds.start, a.seeds.end
+    );
+    let start = Instant::now();
+    // Mutantlar birbirinden bağımsız: her biri kendi iş parçacığında ve dizininde.
+    let hunts: Vec<Result<Hunt, String>> = std::thread::scope(|s| {
+        let handles: Vec<_> = Mutation::ALL
+            .into_iter()
+            .map(|m| {
+                let (a, dir) = (&a, workdir.join(m.name()));
+                s.spawn(move || hunt(m, a, &dir))
+            })
+            .collect();
+        handles
+            .into_iter()
+            .map(|h| h.join().expect("iş parçacığı panikledi"))
+            .collect()
+    });
+    let _ = std::fs::remove_dir_all(&workdir);
+    println!(
+        "{:<24} {:>9} {:>6} {:>10}  ilk bulgu",
+        "mutant", "yakalanan", "ilk", "ilke dek"
+    );
+    let mut all_caught = true;
+    for h in hunts {
+        let h = h?;
+        let rate = format!("{}/{}", h.seeds_caught, h.seeds_tried);
+        match &h.first {
+            Some((seed, f)) => println!(
+                "{:<24} {:>9} {:>6} {:>10}  {}",
+                h.mutation.name(),
+                rate,
+                seed,
+                h.states_to_first,
+                finding_kind(&f.finding)
+            ),
+            None => {
+                all_caught = false;
+                println!(
+                    "{:<24} {:>9} {:>6} {:>10}  YAKALANMADI",
+                    h.mutation.name(),
+                    rate,
+                    "-",
+                    "-"
+                );
+            }
+        }
+    }
+    println!("süre: {:.1} sn", start.elapsed().as_secs_f64());
+    Ok(if all_caught {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::from(1)
+    })
+}
+
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let result = match args.first().map(String::as_str) {
         Some("run") => cmd_run(&args[1..]),
+        Some("mutants") => cmd_mutants(&args[1..]),
         Some("-h" | "--help") => {
             println!("{USAGE}");
             return ExitCode::SUCCESS;

@@ -97,6 +97,7 @@ fn clean_engine_has_no_findings() {
                 SyncPolicy::OnSyncOnly
             },
             checkpoint_every: 7,
+            mutation: None,
         };
         let ops = generate(seed, &WorkloadConfig::default());
         let n = ops.len();

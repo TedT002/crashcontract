@@ -7,9 +7,10 @@ use cc_adapter::{AdapterError, StorageAdapter};
 use cc_model::{Durability, Guarantees, State, Value, Write};
 use cc_trace::{DirVfs, FileId, OpenMode, TraceLog, Vfs};
 
+use crate::Mutation;
 use crate::format::{
     CHECKPOINT_FILE, CHECKPOINT_TMP_FILE, MAX_RECORD_PAYLOAD, WAL_HEADER_LEN, decode_checkpoint,
-    decode_wal, encode_checkpoint, encode_wal_record, parse_wal_file_name, wal_file_name,
+    decode_wal_checked, encode_checkpoint, encode_wal_record, parse_wal_file_name, wal_file_name,
 };
 
 /// Senkronizasyon politikası → bildirilen Durability.
@@ -21,8 +22,7 @@ pub enum SyncPolicy {
     OnSyncOnly,
 }
 
-/// Motor yapılandırması. Testler `ToyConfig { .., ..ToyConfig::default() }` kullanır
-/// (Aşama 5 alan eklerse kırılmaz).
+/// Motor yapılandırması. Testler `ToyConfig { .., ..ToyConfig::default() }` kullanır.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ToyConfig {
     /// Ne zaman fdatasync yapılır.
@@ -30,6 +30,8 @@ pub struct ToyConfig {
     /// Mevcut WAL'daki kayıt sayısı bu değere ulaşınca (işlemin içinde, kaydı yazdıktan sonra)
     /// checkpoint. 0 = otomatik checkpoint yok (açılış checkpoint'i her zaman yapılır).
     pub checkpoint_every: u32,
+    /// Bilerek yerleştirilmiş hata (Aşama 5); `None` = doğru motor.
+    pub mutation: Option<Mutation>,
 }
 
 impl Default for ToyConfig {
@@ -37,6 +39,7 @@ impl Default for ToyConfig {
         ToyConfig {
             sync_policy: SyncPolicy::EveryCommit,
             checkpoint_every: 64,
+            mutation: None,
         }
     }
 }
@@ -86,6 +89,7 @@ fn checkpoint(
     mem: &State,
     g: u64,
     old_wal: Option<FileId>,
+    mutation: Option<Mutation>,
 ) -> io::Result<FileId> {
     // C1 — "referanstan önce var ol": yeni WAL'ın ad girdisi, ona referans verecek CHECKPOINT
     // kalıcılaşmadan ÖNCE dizin fsync'iyle sabitlenir. Aksi halde çökmeden sonra CHECKPOINT nesil
@@ -98,25 +102,40 @@ fn checkpoint(
     // tuzağı.
     let tmp = vfs.open(CHECKPOINT_TMP_FILE, OpenMode::CreateNew)?;
     vfs.write_at(tmp, 0, &encode_checkpoint(g + 1, mem))?;
-    // MUTASYON NOKTASI (Aşama 5): M5 rename öncesi fsync yok — bu fsync'i atla.
-    vfs.fsync(tmp)?;
+    // MUTASYON NOKTASI M5: rename öncesi fsync yok.
+    if mutation != Some(Mutation::NoFsyncBeforeRename) {
+        vfs.fsync(tmp)?;
+    }
 
     // C3 — atomik değiştirme: rename, eski ya da yeni CHECKPOINT'i bütün olarak bırakır; ama ad
     // değişikliği ancak dizin fsync'iyle kalıcıdır.
     vfs.rename(CHECKPOINT_TMP_FILE, CHECKPOINT_FILE)?;
-    // MUTASYON NOKTASI (Aşama 5): M2 fsync sırası — C4'teki unlink'i bu sync_dir'den önceye al.
+    // MUTASYON NOKTASI M2: fsync sırası — eski WAL, rename kalıcılaşmadan (dizin fsync'inden önce)
+    // silinir. Çökmede eski CHECKPOINT nesil g'yi gösterirken wal-g gitmiş olabilir.
+    let unlink_early = mutation == Some(Mutation::UnlinkBeforeDirSync);
+    if unlink_early {
+        drop_old_wal(vfs, g, old_wal)?;
+    }
     vfs.sync_dir()?;
     vfs.close(tmp)?;
 
     // C4 — eski WAL ancak yeni CHECKPOINT kalıcıyken silinir. Unlink'in kendisi için dizin
     // fsync'i yok: kaybolursa açılıştaki GC (R3) dosyayı yeniden siler.
+    if !unlink_early {
+        drop_old_wal(vfs, g, old_wal)?;
+    }
+    Ok(new_wal)
+}
+
+/// C4: eski WAL'ı kapat ve sil (bootstrap'ta, g = 0, eski WAL yoktur).
+fn drop_old_wal(vfs: &mut dyn Vfs, g: u64, old_wal: Option<FileId>) -> io::Result<()> {
     if g >= 1 {
         if let Some(w) = old_wal {
             vfs.close(w)?;
         }
         vfs.unlink(&wal_file_name(g))?;
     }
-    Ok(new_wal)
+    Ok(())
 }
 
 impl ToyDb {
@@ -127,6 +146,7 @@ impl ToyDb {
             &self.mem,
             self.generation,
             Some(self.wal),
+            self.cfg.mutation,
         )?;
         // C5 — LSN her dosyada 1'den başlar.
         self.generation += 1;
@@ -143,26 +163,40 @@ impl ToyDb {
             // Boş Txn: etkisiz, kayıt yazılmaz.
             return Ok(());
         }
-        let rec = encode_wal_record(self.next_lsn, writes);
-        if rec.len() - WAL_HEADER_LEN > MAX_RECORD_PAYLOAD as usize {
-            // G/Ç'den ÖNCE reddet: kurtarma bu kaydı TooLong sayıp orada dururdu.
-            return Err(io::Error::new(io::ErrorKind::InvalidInput, "kayıt çok büyük").into());
-        }
         // Tek kayıt = tek write_at: Txn atomikliği kaydın CRC'sinden gelir.
-        self.vfs.write_at(self.wal, self.wal_len, &rec)?;
-        self.wal_len += rec.len() as u64;
-        self.next_lsn += 1;
-        self.wal_records += 1;
-        if self.cfg.sync_policy == SyncPolicy::EveryCommit {
+        // MUTASYON NOKTASI M7: txn atomikliğini boz — her yazma ayrı kayıt (ayrı write_at).
+        let records: Vec<&[Write]> = if self.cfg.mutation == Some(Mutation::SplitTxnRecords) {
+            writes.chunks(1).collect()
+        } else {
+            vec![writes]
+        };
+        for (i, part) in records.iter().enumerate() {
+            let rec = encode_wal_record(self.next_lsn + i as u64, part);
+            if rec.len() - WAL_HEADER_LEN > MAX_RECORD_PAYLOAD as usize {
+                // G/Ç'den ÖNCE reddet: kurtarma bu kaydı TooLong sayıp orada dururdu.
+                return Err(io::Error::new(io::ErrorKind::InvalidInput, "kayıt çok büyük").into());
+            }
+        }
+        for part in records {
+            let rec = encode_wal_record(self.next_lsn, part);
+            self.vfs.write_at(self.wal, self.wal_len, &rec)?;
+            self.wal_len += rec.len() as u64;
+            self.next_lsn += 1;
+            self.wal_records += 1;
+        }
+        // MUTASYON NOKTASI M1: fsync'i atla.
+        if self.cfg.sync_policy == SyncPolicy::EveryCommit
+            && self.cfg.mutation != Some(Mutation::SkipCommitFsync)
+        {
             // W1 — fsync sınırı: OnAck vaadi için kayıt ACK'ten önce kalıcı olmalı. fdatasync
             // yeter: ekleme dosya boyutunu değiştirir ve boyut, veriyi okumak için gereken meta
             // veridir (fdatasync(2)).
-            // MUTASYON NOKTASI (Aşama 5): M1 fsync atla — bu fdatasync'i atla.
             self.vfs.fdatasync(self.wal)?;
         }
         // W2 (OnSyncOnly): ACK ≠ dayanıklılık — kayıt sayfa önbelleğinde, sync()'i bekliyor.
         apply_writes(&mut self.mem, writes);
-        if self.cfg.checkpoint_every > 0 && self.wal_records == self.cfg.checkpoint_every {
+        // `>=`: M7 bir işlemde birden çok kayıt yazabilir; doğru motorda `==` ile aynıdır.
+        if self.cfg.checkpoint_every > 0 && self.wal_records >= self.cfg.checkpoint_every {
             self.do_checkpoint()?;
         }
         Ok(())
@@ -187,7 +221,7 @@ fn recover(mut vfs: Box<dyn Vfs>, cfg: &ToyConfig) -> Result<ToyDb, AdapterError
             vfs.unlink(n)?;
         }
         let mem = State::new();
-        let wal = checkpoint(vfs.as_mut(), &mem, 0, None)?;
+        let wal = checkpoint(vfs.as_mut(), &mem, 0, None, cfg.mutation)?;
         return Ok(ToyDb {
             vfs,
             cfg: cfg.clone(),
@@ -224,16 +258,31 @@ fn recover(mut vfs: Box<dyn Vfs>, cfg: &ToyConfig) -> Result<ToyDb, AdapterError
     let w = vfs.open(&wal_name, OpenMode::Existing)?;
     let bytes = vfs.read_all(w)?;
     vfs.close(w)?;
-    let replay = decode_wal(&bytes)?;
-    // MUTASYON NOKTASI (Aşama 5): M3 son kaydı at — `replay.records`'ın sonuncusunu uygulama.
-    for writes in &replay.records {
-        // MUTASYON NOKTASI (Aşama 5): M4 tombstone yoksay — Delete yazmalarını atla.
-        apply_writes(&mut state, writes);
+    // MUTASYON NOKTASI M6: kısmi kaydı geçerli say (CRC denetlenmez).
+    let verify_crc = cfg.mutation != Some(Mutation::AcceptCorruptRecord);
+    let replay = decode_wal_checked(&bytes, verify_crc)?;
+    // MUTASYON NOKTASI M3: son kaydı at.
+    let keep = match cfg.mutation {
+        Some(Mutation::DropLastRecord) => replay.records.len().saturating_sub(1),
+        _ => replay.records.len(),
+    };
+    for writes in &replay.records[..keep] {
+        if cfg.mutation == Some(Mutation::IgnoreTombstones) {
+            // MUTASYON NOKTASI M4: tombstone'u yoksay — Delete yazmaları atlanır.
+            let puts: Vec<Write> = writes
+                .iter()
+                .filter(|w| matches!(w, Write::Put { .. }))
+                .cloned()
+                .collect();
+            apply_writes(&mut state, &puts);
+        } else {
+            apply_writes(&mut state, writes);
+        }
     }
 
     // R5 — kurtarma checkpoint'i: kurtarılan WAL'a ASLA ekleme yapılmaz; yeni nesil açılır.
     // Böylece geçersiz kuyruğun ardındaki eski-geçerli kayıtlar asla diriltilemez.
-    let wal = checkpoint(vfs.as_mut(), &state, g, None)?;
+    let wal = checkpoint(vfs.as_mut(), &state, g, None, cfg.mutation)?;
     Ok(ToyDb {
         vfs,
         cfg: cfg.clone(),

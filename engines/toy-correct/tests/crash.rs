@@ -70,6 +70,7 @@ fn toy_correct_survives_every_crash_state() {
                 SyncPolicy::OnSyncOnly
             },
             checkpoint_every: if (seed / 2).is_multiple_of(2) { 0 } else { 5 },
+            mutation: None,
         };
         total += check_seed(seed, &cfg, &CrashConfig::default(), &scratch).all;
     }
@@ -101,6 +102,7 @@ fn toy_correct_survives_torn_writes() {
                     SyncPolicy::OnSyncOnly
                 },
                 checkpoint_every: 0,
+                mutation: None,
             };
             let t = check_seed(seed, &cfg, &crash_cfg, &scratch);
             total.all += t.all;

@@ -200,6 +200,14 @@ fn decode_payload(payload: &[u8]) -> Option<Vec<Write>> {
 /// CRC'si geçen ama payload'ı çözülemeyen kayıt `Err(Corruption)` döner: bu yırtık yazma değil,
 /// motorun kendi kodlama hatasıdır ve gizlenmemelidir.
 pub fn decode_wal(bytes: &[u8]) -> Result<WalReplay, AdapterError> {
+    decode_wal_checked(bytes, true)
+}
+
+/// [`decode_wal`]; `verify_crc = false` yalnız M6 mutantı içindir.
+pub(crate) fn decode_wal_checked(
+    bytes: &[u8],
+    verify_crc: bool,
+) -> Result<WalReplay, AdapterError> {
     let mut records = Vec::new();
     let mut off = 0usize;
     let mut expected = 1u64;
@@ -220,8 +228,6 @@ pub fn decode_wal(bytes: &[u8]) -> Result<WalReplay, AdapterError> {
                 found: lsn,
             };
         }
-        // MUTASYON NOKTASI (Aşama 5): M6 kısmi kaydı geçerli say — TooLong/Truncated/BadCrc
-        // dallarında durmak yerine eldeki baytları kayıt saymak.
         if len > MAX_RECORD_PAYLOAD {
             break WalStop::TooLong { len };
         }
@@ -230,7 +236,8 @@ pub fn decode_wal(bytes: &[u8]) -> Result<WalReplay, AdapterError> {
             break WalStop::Truncated;
         }
         let payload = &rest[WAL_HEADER_LEN..total];
-        if crc32_parts(&[&rest[0..8], &rest[8..12], payload]) != crc {
+        // MUTASYON NOKTASI M6: CRC denetimi kapatılırsa yırtık kayıt geçerli sayılır.
+        if verify_crc && crc32_parts(&[&rest[0..8], &rest[8..12], payload]) != crc {
             break WalStop::BadCrc;
         }
         let writes = decode_payload(payload).ok_or_else(|| {

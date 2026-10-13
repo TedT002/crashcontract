@@ -19,6 +19,7 @@ fn cfg(policy: SyncPolicy, every: u32) -> ToyConfig {
     ToyConfig {
         sync_policy: policy,
         checkpoint_every: every,
+        mutation: None,
     }
 }
 fn put(k: &str, v: &str) -> Op {

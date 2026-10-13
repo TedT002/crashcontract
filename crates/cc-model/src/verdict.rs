@@ -5,11 +5,13 @@ use std::fmt;
 
 /// İhlal sınıfı. Minimizer "aynı türde ihlal hâlâ var mı?" sorusunu bununla sorar.
 ///
-/// Her sınıfın tipik gerçek hata karşılığı (BEKLENEN eşleme; Aşama 5'te mutantlarla ÖLÇÜLECEK):
-/// fsync atlama → `LostDurableWrite`; WAL replay'de son kaydı atma → `LostDurableWrite` /
-/// `PrefixViolation`; tombstone yoksayma → `ResurrectedDelete`; kısmi kaydı geçerli sayma →
-/// `PhantomValue` / `PartialTxn`; rename öncesi fsync yapmama → `LostDurableWrite` /
-/// `PrefixViolation`.
+/// Hata sınıfı → ihlal eşlemesi, toy mutantlarıyla ÖLÇÜLDÜ (Aşama 5, `engines/toy-mutants`, 40 seed;
+/// yalnız bu motor için geçerli): fsync atlama → `LostDurableWrite`; WAL replay'de son kaydı atma →
+/// `LostDurableWrite`; tombstone yoksayma → `ResurrectedDelete` (txn içi silmede `PartialTxn`);
+/// kısmi kaydı geçerli sayma → `PhantomValue` / `PrefixViolation` ya da kurtarma hatası; txn'i
+/// bölme → `PartialTxn` (ara değer eski bir değere eşitse `LostDurableWrite`). Rename öncesi fsync
+/// yapmama ve fsync sırasını bozma toy motorda ihlal değil **kurtarma hatası** üretir (motor bozuk
+/// CHECKPOINT'i / eksik WAL'ı reddeder) — tahmin edilen `LostDurableWrite` ölçümle doğrulanmadı.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum ViolationKind {
     /// Dayanıklılık tabanının altındaki (vaat edilmiş) bir yazmanın etkisi kayıp ya da eski değer döndü.
