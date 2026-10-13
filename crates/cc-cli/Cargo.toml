@@ -6,6 +6,9 @@ edition.workspace = true
 rust-version.workspace = true
 publish.workspace = true
 
+[lib]
+path = "src/lib.rs"
+
 [[bin]]
 name = "crashcontract"
 path = "src/main.rs"
@@ -21,6 +24,16 @@ cc-adapter = { path = "../cc-adapter" }
 cc-workload = { path = "../cc-workload" }
 # Test edilen motor(lar).
 toy-correct = { path = "../../engines/toy-correct" }
+# Bulgu küçültme (ddmin).
+cc-minimize = { path = "../cc-minimize" }
+# serde + serde_json: yeniden oynatılabilir JSON rapor (Aşama 6). JSON'u elle yazmak/okumak
+# hataya açık; serde_json fiili standart ve yalnız bu crate'te.
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[dev-dependencies]
+# Rapor testleri her mutantın kataloğundaki yapılandırmayı kullanır.
+toy-mutants = { path = "../../engines/toy-mutants" }
 
 [lints]
 workspace = true

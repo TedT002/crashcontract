@@ -9,7 +9,10 @@
 //! consistency kavramını hedeflediği varyant dokümanında yazılıdır.
 
 /// Bilerek yerleştirilmiş hata. `ToyConfig::mutation == None` doğru motordur.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
+#[serde(rename_all = "kebab-case")]
 pub enum Mutation {
     /// M1 — **fsync'i atla:** `EveryCommit`'te kayıt fdatasync'lenmeden ACK'lenir. `OnAck` vaadi
     /// bozulur: ACK'li yazma çökmede kaybolabilir (fsync sınırı).

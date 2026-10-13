@@ -13,6 +13,8 @@ cc-model = { path = "../../crates/cc-model" }
 cc-trace = { path = "../../crates/cc-trace" }
 # StorageAdapter trait'i ve AdapterError.
 cc-adapter = { path = "../../crates/cc-adapter" }
+# serde: ToyConfig (mutasyon dahil) JSON rapora girer (Aşama 6).
+serde = { version = "1", features = ["derive"] }
 
 [lints]
 workspace = true

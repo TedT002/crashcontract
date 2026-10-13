@@ -25,6 +25,7 @@
 //! Model, motoru [`Guarantees`] içinde **bildirdiği** vaatlerle yargılar. Vaat etmediği bir şeyi
 //! kaybetmesi ihlal sayılmaz; ama hiç yazılmamış veri üretmesi her modda ihlaldir.
 
+pub mod bytes_repr;
 mod check;
 mod guarantees;
 mod history;

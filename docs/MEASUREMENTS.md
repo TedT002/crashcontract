@@ -55,6 +55,27 @@ checkpoint 0/7; tüm kesmeler + yırtık yazma), 12,4 sn:
 yakalandı. `split-txn-records`'taki 1 LostDurableWrite etiketi: yarım txn'in görünen ara değeri bir
 silme olduğunda sınıflandırıcı eski-değer açıklamasını önceler (SPEC_stage1 §4.6(a)); hüküm aynıdır.
 
+## Aşama 6 — küçültme (2026-10-13)
+
+`crashcontract minimize --seed 0 --engine toy-mutant:<ad>` (mutantın yapılandırmasıyla; raporlar
+`failures/`). Her rapor `crashcontract replay` ile **bire bir** yeniden üretildi (CI testi:
+`committed_reports_replay_identically`).
+
+| Mutant | İşlem | Anahtar | Değer baytı | Deneme | Küçültülmüş karşı örnek |
+|--------|-------|---------|-------------|--------|-------------------------|
+| `skip-commit-fsync` | 55 → 1 | 8 → 1 | 239 → 0 | 11 | `put a=""` |
+| `unlink-before-dir-sync` | 55 → 3 | 8 → 1 | 239 → 0 | 36 | `put a; delete a; put a` (3 kayıt = 1 checkpoint) |
+| `drop-last-record` | 55 → 1 | 8 → 1 | 239 → 0 | 11 | `put a=""` |
+| `ignore-tombstones` | 55 → 2 | 8 → 1 | 239 → 0 | 42 | `put a; delete a` |
+| `no-fsync-before-rename` | 55 → 0 | 8 → 0 | 239 → 0 | 2 | (boş — açılıştaki checkpoint yeterli) |
+| `accept-corrupt-record` | 55 → 14 | 8 → 1 | 239 → 107 | 323 | sektör sınırını aşan kayıtlar gerekir |
+| `split-txn-records` | 55 → 1 | 8 → 1 | 239 → 1 | 20 | `txn[put a=""; put a="\xda"]` |
+
+Toplam: 385 → 22 işlem (**%94,3 küçülme**; `accept-corrupt-record` hariç 330 → 8, %97,6).
+`accept-corrupt-record`'da anahtarlar `a`'ya yeniden adlandırılamadı: kısalan kayıtlar sektör
+sınırlarını kaydırıyor ve yırtılma artık kaydın ortasına düşmüyor — minimizer sınıf değiştiren adayı
+reddetti (doğru davranış).
+
 ## Aşama 3 — mutant ön kontrolü (elle enjekte, geri alındı)
 
 `engines/toy-correct/tests/crash.rs` duman testi (18 seed, tüm kesmeler, yırtık geçişi dahil) altı hata

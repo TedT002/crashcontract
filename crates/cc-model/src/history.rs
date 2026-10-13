@@ -12,7 +12,8 @@ use crate::{Durability, Op, State, Value};
 use std::fmt;
 
 /// Bir işlemin sonucu.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "outcome", rename_all = "snake_case")]
 pub enum Outcome {
     /// Gönderildi, henüz dönmedi (kayıt sürerken geçici durum). Kontrolde InFlight gibi davranır.
     Issued,
@@ -21,6 +22,7 @@ pub enum Outcome {
     /// Get başarıyla döndü; `value` okunan değer (None = anahtar yok).
     Read {
         /// Okunan değer; `None` anahtarın bulunmadığı anlamına gelir.
+        #[serde(with = "crate::bytes_repr::opt_bytes")]
         value: Option<Value>,
     },
     /// İşlem hata döndürdü. Etkisi belirsizdir (uygulanmış olabilir). Geçmişi kapatır.
@@ -43,7 +45,7 @@ impl Outcome {
 }
 
 /// Geçmişteki tek kayıt.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Entry {
     /// İşlem.
     pub op: Op,
@@ -55,7 +57,9 @@ pub struct Entry {
 /// ilk `txn_writes` yazması uygulanmış. Kanonik biçim: `txn_writes == 0` veya
 /// `0 < txn_writes < writes.len()` (tam uygulanmış txn `Cut{ops+1, 0}` ile gösterilir).
 /// Sıra (derive Ord) = geçmişteki konum sırası.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub struct Cut {
     /// Tamamen uygulanmış işlem sayısı.
     pub ops: usize,
@@ -338,5 +342,20 @@ impl History {
                 .map_or(0, |i| i + 1),
             Durability::NoGuarantee => 0,
         }
+    }
+}
+
+/// Serileştirme: kayıt listesi. Okurken `from_entries` değişmezleri (I1/I2) doğrular — elle
+/// düzenlenmiş ya da bozuk bir rapor geçersiz bir geçmiş kuramaz.
+impl serde::Serialize for History {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        self.entries.serialize(s)
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for History {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<History, D::Error> {
+        let entries = Vec::<Entry>::deserialize(d)?;
+        History::from_entries(entries).map_err(serde::de::Error::custom)
     }
 }

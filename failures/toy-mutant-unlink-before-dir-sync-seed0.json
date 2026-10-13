@@ -1,0 +1,234 @@
+{
+  "schema_version": 1,
+  "tool_version": "0.1.0",
+  "engine": {
+    "name": "toy",
+    "config": {
+      "sync_policy": "every-commit",
+      "checkpoint_every": 3,
+      "mutation": "unlink-before-dir-sync"
+    }
+  },
+  "guarantees": {
+    "durability": "on_ack",
+    "atomic_txn": true,
+    "prefix_order": true
+  },
+  "seed": 0,
+  "workload": {
+    "min_ops": 20,
+    "extra_ops": 100,
+    "key_space": 8,
+    "max_value_len": 16,
+    "max_txn_writes": 4,
+    "weights": {
+      "put": 40,
+      "delete": 15,
+      "get": 25,
+      "txn": 15,
+      "sync": 5
+    }
+  },
+  "run": {
+    "crash": {
+      "exhaustive_limit": 8,
+      "random_samples": 8,
+      "torn_writes": false,
+      "sector_size": 512
+    },
+    "cuts": "all"
+  },
+  "ops": [
+    {
+      "op": "put",
+      "key": "a",
+      "value": ""
+    },
+    {
+      "op": "delete",
+      "key": "a"
+    },
+    {
+      "op": "put",
+      "key": "a",
+      "value": ""
+    }
+  ],
+  "minimization": {
+    "original_ops": 55,
+    "minimized_ops": 3,
+    "original_keys": 8,
+    "minimized_keys": 1,
+    "original_value_bytes": 239,
+    "minimized_value_bytes": 0,
+    "tests_run": 36
+  },
+  "failure": {
+    "cut": 20,
+    "crash_point": {
+      "completed": 2,
+      "in_flight": true
+    },
+    "choice": {
+      "persisted": [
+        19
+      ],
+      "torn": null
+    },
+    "recovered": null,
+    "finding": {
+      "kind": "recovery_failed",
+      "detail": "bozuk kalıcı veri: CHECKPOINT nesil 1 ama wal-0000000000000001 yok"
+    },
+    "history": [
+      {
+        "op": {
+          "op": "put",
+          "key": "a",
+          "value": ""
+        },
+        "outcome": {
+          "outcome": "acked"
+        }
+      },
+      {
+        "op": {
+          "op": "delete",
+          "key": "a"
+        },
+        "outcome": {
+          "outcome": "acked"
+        }
+      },
+      {
+        "op": {
+          "op": "put",
+          "key": "a",
+          "value": ""
+        },
+        "outcome": {
+          "outcome": "acked"
+        }
+      }
+    ],
+    "trace": {
+      "events": [
+        {
+          "ev": "open",
+          "name": "wal-0000000000000001",
+          "file": 0,
+          "created": true
+        },
+        {
+          "ev": "sync_dir"
+        },
+        {
+          "ev": "open",
+          "name": "CHECKPOINT.tmp",
+          "file": 1,
+          "created": true
+        },
+        {
+          "ev": "write",
+          "file": 1,
+          "offset": 0,
+          "data": "4343544f594350310100000000000000000000000000000082d00e6e"
+        },
+        {
+          "ev": "fsync",
+          "file": 1
+        },
+        {
+          "ev": "rename",
+          "from": "CHECKPOINT.tmp",
+          "to": "CHECKPOINT"
+        },
+        {
+          "ev": "sync_dir"
+        },
+        {
+          "ev": "write",
+          "file": 0,
+          "offset": 0,
+          "data": "01000000000000000e000000daca38900100000001010000006100000000"
+        },
+        {
+          "ev": "fdatasync",
+          "file": 0
+        },
+        {
+          "ev": "write",
+          "file": 0,
+          "offset": 30,
+          "data": "02000000000000000a000000b01091f101000000020100000061"
+        },
+        {
+          "ev": "fdatasync",
+          "file": 0
+        },
+        {
+          "ev": "write",
+          "file": 0,
+          "offset": 56,
+          "data": "03000000000000000e000000b58172850100000001010000006100000000"
+        },
+        {
+          "ev": "fdatasync",
+          "file": 0
+        },
+        {
+          "ev": "open",
+          "name": "wal-0000000000000002",
+          "file": 2,
+          "created": true
+        },
+        {
+          "ev": "sync_dir"
+        },
+        {
+          "ev": "open",
+          "name": "CHECKPOINT.tmp",
+          "file": 3,
+          "created": true
+        },
+        {
+          "ev": "write",
+          "file": 3,
+          "offset": 0,
+          "data": "4343544f5943503102000000000000000100000000000000010000006100000000a26814cb"
+        },
+        {
+          "ev": "fsync",
+          "file": 3
+        },
+        {
+          "ev": "rename",
+          "from": "CHECKPOINT.tmp",
+          "to": "CHECKPOINT"
+        },
+        {
+          "ev": "unlink",
+          "name": "wal-0000000000000001"
+        },
+        {
+          "ev": "sync_dir"
+        }
+      ],
+      "spans": [
+        {
+          "start": 7,
+          "end": 9
+        },
+        {
+          "start": 9,
+          "end": 11
+        },
+        {
+          "start": 11,
+          "end": 21
+        }
+      ]
+    }
+  },
+  "finding_text": "kurtarma başarısız: bozuk kalıcı veri: CHECKPOINT nesil 1 ama wal-0000000000000001 yok"
+}

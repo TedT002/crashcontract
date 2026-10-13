@@ -41,7 +41,7 @@ impl SplitMix64 {
 }
 
 /// İşlem türlerinin göreli ağırlıkları.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct OpWeights {
     /// Put.
     pub put: u32,
@@ -68,7 +68,7 @@ impl Default for OpWeights {
 }
 
 /// İş yükü yapılandırması.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct WorkloadConfig {
     /// En az işlem sayısı.
     pub min_ops: u32,

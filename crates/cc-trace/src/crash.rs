@@ -28,7 +28,7 @@ use crate::{FileId, TraceEvent};
 pub type Image = BTreeMap<String, Vec<u8>>;
 
 /// Üretici ayarları.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct CrashConfig {
     /// Bekleyen işlem sayısı ≤ bu ise TÜM alt kümeler denenir (2^n).
     pub exhaustive_limit: u32,
@@ -52,7 +52,9 @@ impl Default for CrashConfig {
 }
 
 /// Yırtık bir yazma: yalnız `pieces` indeksli sektör parçaları kalıcı oldu.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub struct TornWrite {
     /// Yazmanın olay indeksi (bekleyen bir `Write` olmalı).
     pub event: usize,
@@ -61,7 +63,7 @@ pub struct TornWrite {
 }
 
 /// Bir çökme durumunu tek başına belirleyen seçim: hangi bekleyen işlemler kalıcı oldu.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Choice {
     /// Kalıcı olan bekleyen işlemlerin olay indeksleri (artan).
     pub persisted: Vec<usize>,

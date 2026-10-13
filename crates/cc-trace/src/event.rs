@@ -4,11 +4,14 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 /// İz içindeki dosya (inode) kimliği. Kaydedici başına 0'dan ardışık atanır.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub struct FileId(pub u32);
 
 /// Kaydedilen tek dosya sistemi olayı. Adlar kök dizine göre tek bileşendir.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "ev", rename_all = "snake_case")]
 pub enum TraceEvent {
     /// Dosya açıldı. `created`: bu çağrı dosyayı yarattı (yeni dizin girdisi + yeni FileId).
     Open {
@@ -25,7 +28,8 @@ pub enum TraceEvent {
         file: FileId,
         /// Mutlak bayt ofseti.
         offset: u64,
-        /// Yazılan baytlar.
+        /// Yazılan baytlar (raporda onaltılık).
+        #[serde(with = "crate::hex")]
         data: Vec<u8>,
     },
     /// ftruncate.
@@ -63,7 +67,7 @@ pub enum TraceEvent {
 
 /// Geçmişin bir işleminin iz aralığı: `start` = işlem gönderilirken olay sayısı,
 /// `end` = işlem döndüğünde olay sayısı (None: henüz dönmedi). Değişmez: start ≤ end ≤ sonraki.start.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct OpSpan {
     /// İşlemin ilk olayının indeksi (işlem gönderildiğinde olay sayısı).
     pub start: usize,
@@ -72,7 +76,7 @@ pub struct OpSpan {
 }
 
 /// Tam iz. `spans[i]` ↔ `History` indeksi `i`. İlk span'den önceki olaylar açılış (open) fazıdır.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Trace {
     /// Olaylar, gerçekleşme sırasıyla.
     pub events: Vec<TraceEvent>,
@@ -81,7 +85,7 @@ pub struct Trace {
 }
 
 /// `History::crash_view(completed, in_flight)` argümanları.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct CrashPoint {
     /// Çökmeden önce tamamen dönmüş (ACK'li) işlem sayısı.
     pub completed: usize,

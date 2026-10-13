@@ -17,40 +17,49 @@ pub type Value = Vec<u8>;
 pub type State = BTreeMap<Key, Value>;
 
 /// Bir işlem (txn) içindeki tek yazma.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "w", rename_all = "snake_case")]
 pub enum Write {
     /// Anahtara değer yaz (varsa üzerine yaz).
     Put {
         /// Yazılan anahtar.
+        #[serde(with = "crate::bytes_repr::bytes")]
         key: Key,
         /// Yazılan değer.
+        #[serde(with = "crate::bytes_repr::bytes")]
         value: Value,
     },
     /// Anahtarı sil (yoksa etkisiz).
     Delete {
         /// Silinen anahtar.
+        #[serde(with = "crate::bytes_repr::bytes")]
         key: Key,
     },
 }
 
 /// İş yükünün motora gönderdiği tek işlem.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "op", rename_all = "snake_case")]
 pub enum Op {
     /// Tek yazma; ACK'i motorun Durability bildirimine göre dayanıklılık vaat eder/etmez.
     Put {
         /// Yazılan anahtar.
+        #[serde(with = "crate::bytes_repr::bytes")]
         key: Key,
         /// Yazılan değer.
+        #[serde(with = "crate::bytes_repr::bytes")]
         value: Value,
     },
     /// Tek silme.
     Delete {
         /// Silinen anahtar.
+        #[serde(with = "crate::bytes_repr::bytes")]
         key: Key,
     },
     /// Okuma; durumu değiştirmez. Sonucu `Outcome::Read` ile kaydedilir.
     Get {
         /// Okunan anahtar.
+        #[serde(with = "crate::bytes_repr::bytes")]
         key: Key,
     },
     /// begin…commit arası yazmalar; ACK = commit'in dönmesi. Txn içinde Get yoktur (v1 kapsamı).

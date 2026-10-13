@@ -42,9 +42,39 @@ fn usage_errors_exit_two() {
         vec!["run", "--engine", "yok"],
         vec!["run", "--cuts"],
         vec!["run", "--bilinmeyen", "1"],
+        vec!["minimize", "--engine", "toy-correct"],
+        vec!["replay"],
+        vec!["replay", "yok.json"],
     ] {
         let (code, out) = crashcontract(&args);
         assert_eq!(code, 2, "{args:?}: {out}");
         assert!(out.contains("kullanım"), "{out}");
     }
+}
+
+/// `replay` depodaki bir raporu bire bir üretir → çıkış 0.
+#[test]
+fn replay_committed_report_exits_zero() {
+    let report = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../failures/toy-mutant-skip-commit-fsync-seed0.json"
+    );
+    let (code, out) = crashcontract(&["replay", report]);
+    assert_eq!(code, 0, "{out}");
+    assert!(out.contains("AYNI"), "{out}");
+}
+
+/// Bulgusuz seed için `minimize` rapor yazmaz → çıkış 0.
+#[test]
+fn minimize_clean_seed_exits_zero() {
+    let out_dir = std::path::PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join("cli-min");
+    let (code, out) = crashcontract(&[
+        "minimize",
+        "--seed",
+        "3",
+        "--report-dir",
+        out_dir.to_str().unwrap(),
+    ]);
+    assert_eq!(code, 0, "{out}");
+    assert!(out.contains("bulgu yok"), "{out}");
 }

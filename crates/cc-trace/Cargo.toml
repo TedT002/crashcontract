@@ -6,9 +6,9 @@ edition.workspace = true
 rust-version.workspace = true
 publish.workspace = true
 
-# Bilerek boş: iz formatı ve kaydedici yalnız std ile yazılır (bağımlılık minimum).
-# serde Aşama 6'da (JSON rapor) eklemeli olarak gelecek.
 [dependencies]
+# serde: Aşama 6 JSON raporu iz olaylarını ve çökme seçimini taşır (replay için).
+serde = { version = "1", features = ["derive"] }
 
 [lints]
 workspace = true

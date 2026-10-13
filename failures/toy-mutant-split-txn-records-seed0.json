@@ -1,0 +1,180 @@
+{
+  "schema_version": 1,
+  "tool_version": "0.1.0",
+  "engine": {
+    "name": "toy",
+    "config": {
+      "sync_policy": "every-commit",
+      "checkpoint_every": 0,
+      "mutation": "split-txn-records"
+    }
+  },
+  "guarantees": {
+    "durability": "on_ack",
+    "atomic_txn": true,
+    "prefix_order": true
+  },
+  "seed": 0,
+  "workload": {
+    "min_ops": 20,
+    "extra_ops": 100,
+    "key_space": 8,
+    "max_value_len": 16,
+    "max_txn_writes": 4,
+    "weights": {
+      "put": 40,
+      "delete": 15,
+      "get": 25,
+      "txn": 15,
+      "sync": 5
+    }
+  },
+  "run": {
+    "crash": {
+      "exhaustive_limit": 8,
+      "random_samples": 8,
+      "torn_writes": false,
+      "sector_size": 512
+    },
+    "cuts": "all"
+  },
+  "ops": [
+    {
+      "op": "txn",
+      "writes": [
+        {
+          "w": "put",
+          "key": "a",
+          "value": ""
+        },
+        {
+          "w": "put",
+          "key": "a",
+          "value": "\\xda"
+        }
+      ]
+    }
+  ],
+  "minimization": {
+    "original_ops": 55,
+    "minimized_ops": 1,
+    "original_keys": 8,
+    "minimized_keys": 1,
+    "original_value_bytes": 239,
+    "minimized_value_bytes": 1,
+    "tests_run": 20
+  },
+  "failure": {
+    "cut": 8,
+    "crash_point": {
+      "completed": 0,
+      "in_flight": true
+    },
+    "choice": {
+      "persisted": [
+        7
+      ],
+      "torn": null
+    },
+    "recovered": {
+      "a": ""
+    },
+    "finding": {
+      "kind": "violation",
+      "detail": {
+        "kind": "PartialTxn",
+        "key": "a",
+        "expected": [
+          null,
+          "\\xda"
+        ],
+        "found": "",
+        "op_index": 0,
+        "best_cut": null,
+        "durable_floor": 0
+      }
+    },
+    "history": [
+      {
+        "op": {
+          "op": "txn",
+          "writes": [
+            {
+              "w": "put",
+              "key": "a",
+              "value": ""
+            },
+            {
+              "w": "put",
+              "key": "a",
+              "value": "\\xda"
+            }
+          ]
+        },
+        "outcome": {
+          "outcome": "acked"
+        }
+      }
+    ],
+    "trace": {
+      "events": [
+        {
+          "ev": "open",
+          "name": "wal-0000000000000001",
+          "file": 0,
+          "created": true
+        },
+        {
+          "ev": "sync_dir"
+        },
+        {
+          "ev": "open",
+          "name": "CHECKPOINT.tmp",
+          "file": 1,
+          "created": true
+        },
+        {
+          "ev": "write",
+          "file": 1,
+          "offset": 0,
+          "data": "4343544f594350310100000000000000000000000000000082d00e6e"
+        },
+        {
+          "ev": "fsync",
+          "file": 1
+        },
+        {
+          "ev": "rename",
+          "from": "CHECKPOINT.tmp",
+          "to": "CHECKPOINT"
+        },
+        {
+          "ev": "sync_dir"
+        },
+        {
+          "ev": "write",
+          "file": 0,
+          "offset": 0,
+          "data": "01000000000000000e000000daca38900100000001010000006100000000"
+        },
+        {
+          "ev": "write",
+          "file": 0,
+          "offset": 30,
+          "data": "02000000000000000f0000006c53848b0100000001010000006101000000da"
+        },
+        {
+          "ev": "fdatasync",
+          "file": 0
+        }
+      ],
+      "spans": [
+        {
+          "start": 7,
+          "end": 10
+        }
+      ]
+    }
+  },
+  "finding_text": "kısmi txn: anahtar \"a\", beklenen [yok, \"\\xda\"], bulunan \"\", işlem #0, taban F=0"
+}

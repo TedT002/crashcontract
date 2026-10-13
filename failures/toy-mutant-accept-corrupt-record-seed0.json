@@ -1,0 +1,495 @@
+{
+  "schema_version": 1,
+  "tool_version": "0.1.0",
+  "engine": {
+    "name": "toy",
+    "config": {
+      "sync_policy": "on-sync-only",
+      "checkpoint_every": 0,
+      "mutation": "accept-corrupt-record"
+    }
+  },
+  "guarantees": {
+    "durability": "on_sync",
+    "atomic_txn": true,
+    "prefix_order": true
+  },
+  "seed": 0,
+  "workload": {
+    "min_ops": 20,
+    "extra_ops": 100,
+    "key_space": 8,
+    "max_value_len": 16,
+    "max_txn_writes": 4,
+    "weights": {
+      "put": 40,
+      "delete": 15,
+      "get": 25,
+      "txn": 15,
+      "sync": 5
+    }
+  },
+  "run": {
+    "crash": {
+      "exhaustive_limit": 8,
+      "random_samples": 8,
+      "torn_writes": true,
+      "sector_size": 512
+    },
+    "cuts": "all"
+  },
+  "ops": [
+    {
+      "op": "put",
+      "key": "k7",
+      "value": ""
+    },
+    {
+      "op": "put",
+      "key": "k7",
+      "value": "\\xa6\\x09\\xf6{/\\x19\\xabU\\x86d\\xac\\xd7\\x0djL"
+    },
+    {
+      "op": "delete",
+      "key": "k7"
+    },
+    {
+      "op": "txn",
+      "writes": [
+        {
+          "w": "put",
+          "key": "k7",
+          "value": "%\\xb0)\\xf7\\xc3\\x83\\xa1\\xdf)*\\xce\\xa8787"
+        },
+        {
+          "w": "put",
+          "key": "k7",
+          "value": "\\xda\\xb1Vwq\\x14"
+        }
+      ]
+    },
+    {
+      "op": "put",
+      "key": "k7",
+      "value": "Y\\xfc\\xc0\\xc0"
+    },
+    {
+      "op": "put",
+      "key": "k7",
+      "value": "\\xdf\\x087\\xe1\\xd2\\xe8H\\xb4\\xa1\\xfd\\xa7\\xca"
+    },
+    {
+      "op": "put",
+      "key": "k7",
+      "value": "e"
+    },
+    {
+      "op": "put",
+      "key": "k7",
+      "value": "\\x06P\\xbc\\xda"
+    },
+    {
+      "op": "put",
+      "key": "k7",
+      "value": "\\x82\\x9b\\x94wp\\x15a\\xf2\\x08"
+    },
+    {
+      "op": "put",
+      "key": "k7",
+      "value": "\\xd8\\x1f\\xae\\xd6\\xd9\\x1c\\xd0\\xa3\\xc2"
+    },
+    {
+      "op": "put",
+      "key": "k7",
+      "value": "\\xbd\\xe4\\xe8\\xf2\\xe1\\xadl\\xcd\\xb4\\xe0\\x7f\\x7fcP\\x8a\\xe1"
+    },
+    {
+      "op": "put",
+      "key": "k7",
+      "value": "\\xcf\\xf57\\xae\\xa9\\x91E\\xf0\\xe1\\xf6\\xa9\\x93G\\xaa\\xeb"
+    },
+    {
+      "op": "put",
+      "key": "k7",
+      "value": "\\x9d"
+    },
+    {
+      "op": "delete",
+      "key": "k7"
+    }
+  ],
+  "minimization": {
+    "original_ops": 55,
+    "minimized_ops": 14,
+    "original_keys": 8,
+    "minimized_keys": 1,
+    "original_value_bytes": 239,
+    "minimized_value_bytes": 107,
+    "tests_run": 323
+  },
+  "failure": {
+    "cut": 21,
+    "crash_point": {
+      "completed": 14,
+      "in_flight": false
+    },
+    "choice": {
+      "persisted": [
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        20
+      ],
+      "torn": {
+        "event": 19,
+        "pieces": [
+          0
+        ]
+      }
+    },
+    "recovered": null,
+    "finding": {
+      "kind": "recovery_failed",
+      "detail": "bozuk kalıcı veri: LSN 13: CRC geçerli ama payload çözülemiyor"
+    },
+    "history": [
+      {
+        "op": {
+          "op": "put",
+          "key": "k7",
+          "value": ""
+        },
+        "outcome": {
+          "outcome": "acked"
+        }
+      },
+      {
+        "op": {
+          "op": "put",
+          "key": "k7",
+          "value": "\\xa6\\x09\\xf6{/\\x19\\xabU\\x86d\\xac\\xd7\\x0djL"
+        },
+        "outcome": {
+          "outcome": "acked"
+        }
+      },
+      {
+        "op": {
+          "op": "delete",
+          "key": "k7"
+        },
+        "outcome": {
+          "outcome": "acked"
+        }
+      },
+      {
+        "op": {
+          "op": "txn",
+          "writes": [
+            {
+              "w": "put",
+              "key": "k7",
+              "value": "%\\xb0)\\xf7\\xc3\\x83\\xa1\\xdf)*\\xce\\xa8787"
+            },
+            {
+              "w": "put",
+              "key": "k7",
+              "value": "\\xda\\xb1Vwq\\x14"
+            }
+          ]
+        },
+        "outcome": {
+          "outcome": "acked"
+        }
+      },
+      {
+        "op": {
+          "op": "put",
+          "key": "k7",
+          "value": "Y\\xfc\\xc0\\xc0"
+        },
+        "outcome": {
+          "outcome": "acked"
+        }
+      },
+      {
+        "op": {
+          "op": "put",
+          "key": "k7",
+          "value": "\\xdf\\x087\\xe1\\xd2\\xe8H\\xb4\\xa1\\xfd\\xa7\\xca"
+        },
+        "outcome": {
+          "outcome": "acked"
+        }
+      },
+      {
+        "op": {
+          "op": "put",
+          "key": "k7",
+          "value": "e"
+        },
+        "outcome": {
+          "outcome": "acked"
+        }
+      },
+      {
+        "op": {
+          "op": "put",
+          "key": "k7",
+          "value": "\\x06P\\xbc\\xda"
+        },
+        "outcome": {
+          "outcome": "acked"
+        }
+      },
+      {
+        "op": {
+          "op": "put",
+          "key": "k7",
+          "value": "\\x82\\x9b\\x94wp\\x15a\\xf2\\x08"
+        },
+        "outcome": {
+          "outcome": "acked"
+        }
+      },
+      {
+        "op": {
+          "op": "put",
+          "key": "k7",
+          "value": "\\xd8\\x1f\\xae\\xd6\\xd9\\x1c\\xd0\\xa3\\xc2"
+        },
+        "outcome": {
+          "outcome": "acked"
+        }
+      },
+      {
+        "op": {
+          "op": "put",
+          "key": "k7",
+          "value": "\\xbd\\xe4\\xe8\\xf2\\xe1\\xadl\\xcd\\xb4\\xe0\\x7f\\x7fcP\\x8a\\xe1"
+        },
+        "outcome": {
+          "outcome": "acked"
+        }
+      },
+      {
+        "op": {
+          "op": "put",
+          "key": "k7",
+          "value": "\\xcf\\xf57\\xae\\xa9\\x91E\\xf0\\xe1\\xf6\\xa9\\x93G\\xaa\\xeb"
+        },
+        "outcome": {
+          "outcome": "acked"
+        }
+      },
+      {
+        "op": {
+          "op": "put",
+          "key": "k7",
+          "value": "\\x9d"
+        },
+        "outcome": {
+          "outcome": "acked"
+        }
+      },
+      {
+        "op": {
+          "op": "delete",
+          "key": "k7"
+        },
+        "outcome": {
+          "outcome": "acked"
+        }
+      }
+    ],
+    "trace": {
+      "events": [
+        {
+          "ev": "open",
+          "name": "wal-0000000000000001",
+          "file": 0,
+          "created": true
+        },
+        {
+          "ev": "sync_dir"
+        },
+        {
+          "ev": "open",
+          "name": "CHECKPOINT.tmp",
+          "file": 1,
+          "created": true
+        },
+        {
+          "ev": "write",
+          "file": 1,
+          "offset": 0,
+          "data": "4343544f594350310100000000000000000000000000000082d00e6e"
+        },
+        {
+          "ev": "fsync",
+          "file": 1
+        },
+        {
+          "ev": "rename",
+          "from": "CHECKPOINT.tmp",
+          "to": "CHECKPOINT"
+        },
+        {
+          "ev": "sync_dir"
+        },
+        {
+          "ev": "write",
+          "file": 0,
+          "offset": 0,
+          "data": "01000000000000000f0000002690db3a0100000001020000006b3700000000"
+        },
+        {
+          "ev": "write",
+          "file": 0,
+          "offset": 31,
+          "data": "02000000000000001e000000f81678dc0100000001020000006b370f000000a609f67b2f19ab558664acd70d6a4c"
+        },
+        {
+          "ev": "write",
+          "file": 0,
+          "offset": 77,
+          "data": "03000000000000000b00000006c3dcff0100000002020000006b37"
+        },
+        {
+          "ev": "write",
+          "file": 0,
+          "offset": 104,
+          "data": "04000000000000002f00000086205ed20200000001020000006b370f00000025b029f7c383a1df292acea837383701020000006b3706000000dab156777114"
+        },
+        {
+          "ev": "write",
+          "file": 0,
+          "offset": 167,
+          "data": "0500000000000000130000004d44c9190100000001020000006b370400000059fcc0c0"
+        },
+        {
+          "ev": "write",
+          "file": 0,
+          "offset": 202,
+          "data": "06000000000000001b000000c5d9a39a0100000001020000006b370c000000df0837e1d2e848b4a1fda7ca"
+        },
+        {
+          "ev": "write",
+          "file": 0,
+          "offset": 245,
+          "data": "070000000000000010000000cdd868990100000001020000006b370100000065"
+        },
+        {
+          "ev": "write",
+          "file": 0,
+          "offset": 277,
+          "data": "080000000000000013000000203d6a660100000001020000006b37040000000650bcda"
+        },
+        {
+          "ev": "write",
+          "file": 0,
+          "offset": 312,
+          "data": "09000000000000001800000007b39c140100000001020000006b3709000000829b9477701561f208"
+        },
+        {
+          "ev": "write",
+          "file": 0,
+          "offset": 352,
+          "data": "0a000000000000001800000097d190820100000001020000006b3709000000d81faed6d91cd0a3c2"
+        },
+        {
+          "ev": "write",
+          "file": 0,
+          "offset": 392,
+          "data": "0b000000000000001f0000006b6ff08c0100000001020000006b3710000000bde4e8f2e1ad6ccdb4e07f7f63508ae1"
+        },
+        {
+          "ev": "write",
+          "file": 0,
+          "offset": 439,
+          "data": "0c000000000000001e000000f8edec900100000001020000006b370f000000cff537aea99145f0e1f6a99347aaeb"
+        },
+        {
+          "ev": "write",
+          "file": 0,
+          "offset": 485,
+          "data": "0d000000000000001000000031b0ca240100000001020000006b37010000009d"
+        },
+        {
+          "ev": "write",
+          "file": 0,
+          "offset": 517,
+          "data": "0e000000000000000b00000067cb4a640100000002020000006b37"
+        }
+      ],
+      "spans": [
+        {
+          "start": 7,
+          "end": 8
+        },
+        {
+          "start": 8,
+          "end": 9
+        },
+        {
+          "start": 9,
+          "end": 10
+        },
+        {
+          "start": 10,
+          "end": 11
+        },
+        {
+          "start": 11,
+          "end": 12
+        },
+        {
+          "start": 12,
+          "end": 13
+        },
+        {
+          "start": 13,
+          "end": 14
+        },
+        {
+          "start": 14,
+          "end": 15
+        },
+        {
+          "start": 15,
+          "end": 16
+        },
+        {
+          "start": 16,
+          "end": 17
+        },
+        {
+          "start": 17,
+          "end": 18
+        },
+        {
+          "start": 18,
+          "end": 19
+        },
+        {
+          "start": 19,
+          "end": 20
+        },
+        {
+          "start": 20,
+          "end": 21
+        }
+      ]
+    }
+  },
+  "finding_text": "kurtarma başarısız: bozuk kalıcı veri: LSN 13: CRC geçerli ama payload çözülemiyor"
+}

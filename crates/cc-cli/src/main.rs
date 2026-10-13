@@ -15,13 +15,16 @@ use cc_adapter::StorageAdapter;
 use cc_adapter::runner::{
     CutSelection, FailureCase, Finding, RunConfig, RunError, SeedOutcome, run_case,
 };
+use cc_cli::{EngineSpec, read_report, replay, report_file_name, report_for_seed, write_report};
 use cc_trace::CrashConfig;
 use cc_workload::{WorkloadConfig, generate};
 use toy_correct::{Mutation, SyncPolicy, ToyConfig, ToyDb};
 
 const USAGE: &str = "\
 kullanım: crashcontract run [seçenekler]
-         crashcontract mutants [--seeds A..B] [--jobs N]
+         crashcontract minimize --seed N [seçenekler] [--out DOSYA]
+         crashcontract replay RAPOR.json
+         crashcontract mutants [--seeds A..B]
 
 run — seed aralığını koşar, çökme durumlarını yargılar:
   --engine toy-correct|toy-mutant:<ad>
@@ -34,6 +37,13 @@ run — seed aralığını koşar, çökme durumlarını yargılar:
   --torn                          sektör seviyesinde yırtık yazmaları da dene
   --jobs N                        paralel iş parçacığı (varsayılan: çekirdek sayısı)
   --workdir DIR                   çalışma dizini (varsayılan: geçici dizin)
+  --report-dir DIR                bulgu raporlarının dizini (varsayılan: failures)
+  --no-minimize                   raporu küçültmeden yaz
+  bulgu varsa ilk bulgulu seed otomatik küçültülür ve JSON rapor yazılır.
+
+minimize — tek seed'i (--seed N) koşar; bulgu varsa küçültüp raporu yazar (--out ya da --report-dir).
+
+replay — rapordaki koşuyu yeniden yapar; sonuç rapordakiyle bire bir aynıysa çıkış 0, değilse 1.
 
 mutants — her mutantı aralıktaki her seed'de koşar (tüm kesmeler + yırtık yazma), yakalama
   oranını basar (varsayılan seed 0..100).
@@ -62,6 +72,9 @@ struct RunArgs {
     torn: bool,
     jobs: usize,
     workdir: Option<PathBuf>,
+    report_dir: PathBuf,
+    minimize: bool,
+    out: Option<PathBuf>,
 }
 
 fn parse_num<T: std::str::FromStr>(flag: &str, v: &str) -> Result<T, String> {
@@ -80,12 +93,22 @@ fn parse_run(args: &[String]) -> Result<RunArgs, String> {
         torn: false,
         jobs: std::thread::available_parallelism().map_or(1, |n| n.get()),
         workdir: None,
+        report_dir: PathBuf::from("failures"),
+        minimize: true,
+        out: None,
     };
     let mut it = args.iter();
     while let Some(flag) = it.next() {
-        if flag == "--torn" {
-            a.torn = true;
-            continue;
+        match flag.as_str() {
+            "--torn" => {
+                a.torn = true;
+                continue;
+            }
+            "--no-minimize" => {
+                a.minimize = false;
+                continue;
+            }
+            _ => {}
         }
         let v = it
             .next()
@@ -124,6 +147,12 @@ fn parse_run(args: &[String]) -> Result<RunArgs, String> {
             }
             "--jobs" => a.jobs = parse_num::<usize>(flag, v)?.max(1),
             "--workdir" => a.workdir = Some(PathBuf::from(v)),
+            "--report-dir" => a.report_dir = PathBuf::from(v),
+            "--out" => a.out = Some(PathBuf::from(v)),
+            "--seed" => {
+                let n: u64 = parse_num(flag, v)?;
+                a.seeds = n..n + 1;
+            }
             _ => return Err(format!("bilinmeyen seçenek '{flag}'")),
         }
     }
@@ -154,6 +183,62 @@ fn toy_config(a: &RunArgs, seed: u64) -> ToyConfig {
     }
 }
 
+fn run_config(a: &RunArgs) -> RunConfig {
+    RunConfig {
+        crash: CrashConfig {
+            torn_writes: a.torn,
+            ..CrashConfig::default()
+        },
+        cuts: a.cuts,
+    }
+}
+
+fn default_workdir(a: &RunArgs, tag: &str) -> PathBuf {
+    a.workdir.clone().unwrap_or_else(|| {
+        std::env::temp_dir().join(format!("crashcontract-{tag}-{}", std::process::id()))
+    })
+}
+
+/// Seed'in raporunu üretir (istenirse küçültür) ve yazar; yazılan yolu döndürür.
+fn write_seed_report(a: &RunArgs, seed: u64, workdir: &Path) -> Result<Option<PathBuf>, String> {
+    let engine = EngineSpec::Toy(toy_config(a, seed));
+    let started = Instant::now();
+    let report = report_for_seed(
+        &engine,
+        seed,
+        &WorkloadConfig::default(),
+        &run_config(a),
+        &workdir.join("report"),
+        a.minimize,
+    )
+    .map_err(|e| format!("seed {seed}: rapor üretilemedi: {e}"))?;
+    let Some(report) = report else {
+        return Ok(None);
+    };
+    let path = a
+        .out
+        .clone()
+        .unwrap_or_else(|| a.report_dir.join(report_file_name(&report)));
+    write_report(&path, &report)?;
+    if let Some(m) = &report.minimization {
+        println!(
+            "küçültme: {} → {} işlem, {} → {} anahtar, {} → {} değer baytı ({} deneme, {:.1} sn)",
+            m.original_ops,
+            m.minimized_ops,
+            m.original_keys,
+            m.minimized_keys,
+            m.original_value_bytes,
+            m.minimized_value_bytes,
+            m.tests_run,
+            started.elapsed().as_secs_f64()
+        );
+    }
+    println!("bulgu: {}", report.finding_text);
+    println!("rapor: {}", path.display());
+    println!("yeniden oynat: crashcontract replay {}", path.display());
+    Ok(Some(path))
+}
+
 type SeedResult<C> = (u64, C, Result<SeedOutcome, RunError>);
 
 /// Seed'leri `jobs` iş parçacığına (seed % jobs) dağıtır; sonuçlar seed sırasıyla döner.
@@ -165,13 +250,7 @@ fn run_all<A: StorageAdapter>(
 where
     A::Config: Send,
 {
-    let rc = RunConfig {
-        crash: CrashConfig {
-            torn_writes: a.torn,
-            ..CrashConfig::default()
-        },
-        cuts: a.cuts,
-    };
+    let rc = run_config(a);
     let jobs = a.jobs.min(a.seeds.clone().count()).max(1);
     let mut results: Vec<SeedResult<A::Config>> = std::thread::scope(|s| {
         let handles: Vec<_> = (0..jobs)
@@ -202,9 +281,7 @@ where
 
 fn cmd_run(args: &[String]) -> Result<ExitCode, String> {
     let a = parse_run(args)?;
-    let workdir = a.workdir.clone().unwrap_or_else(|| {
-        std::env::temp_dir().join(format!("crashcontract-{}", std::process::id()))
-    });
+    let workdir = default_workdir(&a, "run");
     println!(
         "crashcontract run: motor={} seed={}..{} kesme={:?} yırtık={} iş={}",
         a.engine, a.seeds.start, a.seeds.end, a.cuts, a.torn, a.jobs
@@ -237,9 +314,9 @@ fn cmd_run(args: &[String]) -> Result<ExitCode, String> {
         elapsed.as_secs_f64(),
         states as f64 / elapsed.as_secs_f64().max(1e-9)
     );
-    let _ = std::fs::remove_dir_all(&workdir);
-    match failures.first() {
-        None => Ok(ExitCode::SUCCESS),
+    let first = failures.first().map(|(seed, _, _)| **seed);
+    let code = match failures.first() {
+        None => ExitCode::SUCCESS,
         Some((seed, cfg, f)) => {
             println!("\nilk bulgu: seed {seed}  yapılandırma {cfg:?}");
             match (f.cut, f.crash_point) {
@@ -256,8 +333,63 @@ fn cmd_run(args: &[String]) -> Result<ExitCode, String> {
             if let Some(r) = &f.recovered {
                 println!("  kurtarılan: {} anahtar", r.len());
             }
-            Ok(ExitCode::from(1))
+            ExitCode::from(1)
         }
+    };
+    if let Some(seed) = first {
+        println!();
+        write_seed_report(&a, seed, &workdir)?;
+    }
+    let _ = std::fs::remove_dir_all(&workdir);
+    Ok(code)
+}
+
+fn cmd_minimize(args: &[String]) -> Result<ExitCode, String> {
+    if !args.iter().any(|x| x == "--seed") {
+        return Err("minimize: --seed N gerekli".into());
+    }
+    let a = parse_run(args)?;
+    let workdir = default_workdir(&a, "min");
+    let written = write_seed_report(&a, a.seeds.start, &workdir);
+    let _ = std::fs::remove_dir_all(&workdir);
+    Ok(match written? {
+        Some(_) => ExitCode::from(1),
+        None => {
+            println!("seed {}: bulgu yok", a.seeds.start);
+            ExitCode::SUCCESS
+        }
+    })
+}
+
+fn cmd_replay(args: &[String]) -> Result<ExitCode, String> {
+    let [path] = args else {
+        return Err("replay: tek bir rapor yolu gerekli".into());
+    };
+    let report = read_report(Path::new(path))?;
+    let workdir = std::env::temp_dir().join(format!("crashcontract-replay-{}", std::process::id()));
+    println!(
+        "replay: {} seed {} — {} işlem",
+        report.engine.label(),
+        report.seed,
+        report.ops.len()
+    );
+    let r = replay(&report, &workdir);
+    let _ = std::fs::remove_dir_all(&workdir);
+    let r = r?;
+    if r.identical {
+        println!(
+            "AYNI: bulgu bire bir yeniden üretildi — {}",
+            report.finding_text
+        );
+        Ok(ExitCode::SUCCESS)
+    } else {
+        println!("FARKLI: rapordaki sonuç yeniden üretilemedi");
+        println!("  rapordaki: {}", report.finding_text);
+        match &r.failure {
+            Some(f) => println!("  şimdiki:   {} (kesme {:?})", f.finding, f.cut),
+            None => println!("  şimdiki:   bulgu yok"),
+        }
+        Ok(ExitCode::from(1))
     }
 }
 
@@ -390,6 +522,8 @@ fn main() -> ExitCode {
     let result = match args.first().map(String::as_str) {
         Some("run") => cmd_run(&args[1..]),
         Some("mutants") => cmd_mutants(&args[1..]),
+        Some("minimize") => cmd_minimize(&args[1..]),
+        Some("replay") => cmd_replay(&args[1..]),
         Some("-h" | "--help") => {
             println!("{USAGE}");
             return ExitCode::SUCCESS;

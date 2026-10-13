@@ -31,6 +31,7 @@
 pub mod crash;
 mod dir_vfs;
 mod event;
+mod hex;
 mod vfs;
 
 pub use crash::{

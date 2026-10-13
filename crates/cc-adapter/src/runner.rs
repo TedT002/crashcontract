@@ -19,13 +19,16 @@ use std::path::Path;
 use cc_model::{
     History, HistoryError, Op, State, Verdict, Violation, check_reads, check_recovered,
 };
-use cc_trace::{Choice, CrashConfig, CrashError, CrashPoint, TraceLog, crash_states, materialize};
+use cc_trace::{
+    Choice, CrashConfig, CrashError, CrashPoint, Trace, TraceLog, crash_states, materialize,
+};
 use cc_workload::SplitMix64;
 
 use crate::{AdapterError, StorageAdapter, apply_op};
 
 /// Hangi kesme noktaları denenecek.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum CutSelection {
     /// Tüm kesmeler: `0..=olay sayısı`.
     All,
@@ -34,7 +37,7 @@ pub enum CutSelection {
 }
 
 /// Runner ayarları.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct RunConfig {
     /// Çökme durumu üreteci ayarları.
     pub crash: CrashConfig,
@@ -52,7 +55,8 @@ impl Default for RunConfig {
 }
 
 /// Bir bulgunun türü.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "kind", content = "detail", rename_all = "snake_case")]
 pub enum Finding {
     /// Model ihlali (çökme sonrası ya da çalışma sırasındaki okumada).
     Violation(Violation),
@@ -77,7 +81,7 @@ impl fmt::Display for Finding {
 }
 
 /// Bir bulgunun tam bağlamı (Aşama 6 raporu ve replay bunu kullanır).
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct FailureCase {
     /// Kesme noktası; `None` = çökmesiz koşudaki okuma ihlali.
     pub cut: Option<usize>,
@@ -86,9 +90,14 @@ pub struct FailureCase {
     /// Durumu üreten seçim.
     pub choice: Option<Choice>,
     /// Motorun kurtardığı durum (açılabildiyse).
+    #[serde(with = "cc_model::bytes_repr::opt_state")]
     pub recovered: Option<State>,
     /// Bulgu.
     pub finding: Finding,
+    /// Çökmesiz koşunun tam geçmişi (rapor kendi başına incelenebilsin; replay eşitliği).
+    pub history: History,
+    /// Çökmesiz koşunun tam izi.
+    pub trace: Trace,
 }
 
 /// Tek bir iş yükü koşusunun sonucu.
@@ -219,6 +228,8 @@ pub fn run_case<A: StorageAdapter>(
             choice: None,
             recovered: None,
             finding: Finding::Violation(v),
+            history,
+            trace,
         });
         return Ok(outcome);
     }
@@ -241,6 +252,8 @@ pub fn run_case<A: StorageAdapter>(
                     choice: Some(state.choice),
                     recovered,
                     finding,
+                    history: history.clone(),
+                    trace: trace.clone(),
                 });
                 return Ok(outcome);
             }

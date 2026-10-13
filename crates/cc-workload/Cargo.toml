@@ -9,6 +9,8 @@ publish.workspace = true
 [dependencies]
 # Op/Write tipleri: üretilen iş yükü modelin dilinde.
 cc-model = { path = "../cc-model" }
+# serde: üreteç yapılandırması JSON rapora girer (Aşama 6).
+serde = { version = "1", features = ["derive"] }
 
 [lints]
 workspace = true

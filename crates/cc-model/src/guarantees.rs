@@ -12,7 +12,8 @@
 /// Sayfa önbelleği SÜREÇ ölümünde korunur; sabitlenmemiş sayfalar yalnız SİSTEM çökmesinde/güç
 /// kaybında kaybolabilir. (Kullanıcı alanı tamponları — ör. henüz `write()` edilmemiş veri — ise
 /// süreç ölümünde de kaybolur.) Bu enum, hangi ACK'in fsync sınırını geçtiğini söyler.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum Durability {
     /// Her başarılı yazma/txn/sync ACK'i dönmeden önce dayanıklıdır (ör. commit başına fsync).
     OnAck,
@@ -28,7 +29,7 @@ pub enum Durability {
 }
 
 /// Motorun bildirdiği garantilerin tamamı. Tüm kombinasyonlar geçerlidir.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct Guarantees {
     /// Dayanıklılık modu.
     pub durability: Durability,

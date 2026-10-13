@@ -6,9 +6,10 @@ edition.workspace = true
 rust-version.workspace = true
 publish.workspace = true
 
-# Bilerek boş: model saf mantıktır, yalnız std kullanır.
-# serde Aşama 6'da (JSON rapor) gerekçesiyle eklenecek.
+# Model saf mantıktır; tek bağımlılık serileştirme içindir.
 [dependencies]
+# serde: Aşama 6 JSON raporu (replay edilebilir karşı örnek). Mantık serde'ye bağlı değildir.
+serde = { version = "1", features = ["derive"] }
 
 [lints]
 workspace = true

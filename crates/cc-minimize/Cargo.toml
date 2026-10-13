@@ -1,0 +1,18 @@
+[package]
+name = "cc-minimize"
+description = "CrashContract minimizer: ddmin ile işlem dizisi, anahtar uzayı ve değer boyutu küçültme"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+# Op/Write tipleri.
+cc-model = { path = "../cc-model" }
+# Runner: her aday dizi gerçekten koşulup yargılanır.
+cc-adapter = { path = "../cc-adapter" }
+# serde: küçültme istatistikleri JSON rapora girer.
+serde = { version = "1", features = ["derive"] }
+
+[lints]
+workspace = true

@@ -14,7 +14,8 @@ use crate::format::{
 };
 
 /// Senkronizasyon politikası → bildirilen Durability.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub enum SyncPolicy {
     /// Her Put/Delete/Txn kaydı ACK'ten önce fdatasync'lenir → `Durability::OnAck`.
     EveryCommit,
@@ -23,7 +24,7 @@ pub enum SyncPolicy {
 }
 
 /// Motor yapılandırması. Testler `ToyConfig { .., ..ToyConfig::default() }` kullanır.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct ToyConfig {
     /// Ne zaman fdatasync yapılır.
     pub sync_policy: SyncPolicy,

@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "tool_version": "0.1.0",
+  "engine": {
+    "name": "toy",
+    "config": {
+      "sync_policy": "every-commit",
+      "checkpoint_every": 3,
+      "mutation": "no-fsync-before-rename"
+    }
+  },
+  "guarantees": {
+    "durability": "on_ack",
+    "atomic_txn": true,
+    "prefix_order": true
+  },
+  "seed": 0,
+  "workload": {
+    "min_ops": 20,
+    "extra_ops": 100,
+    "key_space": 8,
+    "max_value_len": 16,
+    "max_txn_writes": 4,
+    "weights": {
+      "put": 40,
+      "delete": 15,
+      "get": 25,
+      "txn": 15,
+      "sync": 5
+    }
+  },
+  "run": {
+    "crash": {
+      "exhaustive_limit": 8,
+      "random_samples": 8,
+      "torn_writes": false,
+      "sector_size": 512
+    },
+    "cuts": "all"
+  },
+  "ops": [],
+  "minimization": {
+    "original_ops": 55,
+    "minimized_ops": 0,
+    "original_keys": 8,
+    "minimized_keys": 0,
+    "original_value_bytes": 239,
+    "minimized_value_bytes": 0,
+    "tests_run": 2
+  },
+  "failure": {
+    "cut": 5,
+    "crash_point": {
+      "completed": 0,
+      "in_flight": false
+    },
+    "choice": {
+      "persisted": [
+        4
+      ],
+      "torn": null
+    },
+    "recovered": null,
+    "finding": {
+      "kind": "recovery_failed",
+      "detail": "bozuk kalıcı veri: checkpoint: çok kısa"
+    },
+    "history": [],
+    "trace": {
+      "events": [
+        {
+          "ev": "open",
+          "name": "wal-0000000000000001",
+          "file": 0,
+          "created": true
+        },
+        {
+          "ev": "sync_dir"
+        },
+        {
+          "ev": "open",
+          "name": "CHECKPOINT.tmp",
+          "file": 1,
+          "created": true
+        },
+        {
+          "ev": "write",
+          "file": 1,
+          "offset": 0,
+          "data": "4343544f594350310100000000000000000000000000000082d00e6e"
+        },
+        {
+          "ev": "rename",
+          "from": "CHECKPOINT.tmp",
+          "to": "CHECKPOINT"
+        },
+        {
+          "ev": "sync_dir"
+        }
+      ],
+      "spans": []
+    }
+  },
+  "finding_text": "kurtarma başarısız: bozuk kalıcı veri: checkpoint: çok kısa"
+}

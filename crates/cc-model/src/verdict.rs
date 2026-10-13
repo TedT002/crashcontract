@@ -12,7 +12,9 @@ use std::fmt;
 /// bölme → `PartialTxn` (ara değer eski bir değere eşitse `LostDurableWrite`). Rename öncesi fsync
 /// yapmama ve fsync sırasını bozma toy motorda ihlal değil **kurtarma hatası** üretir (motor bozuk
 /// CHECKPOINT'i / eksik WAL'ı reddeder) — tahmin edilen `LostDurableWrite` ölçümle doğrulanmadı.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, serde::Serialize, serde::Deserialize,
+)]
 pub enum ViolationKind {
     /// Dayanıklılık tabanının altındaki (vaat edilmiş) bir yazmanın etkisi kayıp ya da eski değer döndü.
     LostDurableWrite,
@@ -43,15 +45,18 @@ impl fmt::Display for ViolationKind {
 }
 
 /// Bir ihlalin raporu (minimizer ve JSON rapor için yeterli bilgi).
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Violation {
     /// Sınıf.
     pub kind: ViolationKind,
     /// İhlalin görüldüğü anahtar (birden fazlaysa bayt sırasına göre ilki).
+    #[serde(with = "crate::bytes_repr::bytes")]
     pub key: Key,
     /// Bu anahtar için beklenen aday değerler; sıralı (Option<Value> Ord: None önce) ve tekrarsız.
+    #[serde(with = "crate::bytes_repr::vec_opt_bytes")]
     pub expected: Vec<Option<Value>>,
     /// Kurtarılan durumda (veya ReadMismatch'te okumada) bulunan değer.
+    #[serde(with = "crate::bytes_repr::opt_bytes")]
     pub found: Option<Value>,
     /// İlgili işlemin geçmişteki indeksi. PhantomValue'da None.
     pub op_index: Option<usize>,

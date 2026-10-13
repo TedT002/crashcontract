@@ -6,6 +6,7 @@ members = [
     "crates/cc-trace",
     "crates/cc-adapter",
     "crates/cc-workload",
+    "crates/cc-minimize",
     "crates/cc-cli",
     "engines/toy-correct",
     "engines/toy-mutants",
