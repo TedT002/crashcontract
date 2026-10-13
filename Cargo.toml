@@ -1,0 +1,23 @@
+[workspace]
+resolver = "3"
+# Açık liste: her crate kendi aşamasında buraya eklenir (glob yok — bkz. SPEC §0.2).
+members = [
+    "crates/cc-model",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.98"
+publish = false
+
+[workspace.lints.rust]
+# Yalnızca cc-shim (Aşama 7, LD_PRELOAD) crate seviyesinde gerekçeli #![allow(unsafe_code)] ile açar.
+# "forbid" değil "deny": forbid, crate seviyesinde allow ile geçersiz kılınamaz.
+unsafe_code = "deny"
+missing_docs = "warn"
+
+[workspace.lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+unimplemented = "warn"
