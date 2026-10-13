@@ -28,10 +28,15 @@
 //! katmaz, yalnız testleri yavaşlatır. Sonuç: toy motorlar gerçek diskte dayanıklı **değildir** —
 //! bu, README'nin "Doğrulanmayanlar" bölümüne yazılır.
 
+pub mod crash;
 mod dir_vfs;
 mod event;
 mod vfs;
 
+pub use crash::{
+    Choice, CrashConfig, CrashError, CrashState, Image, TornWrite, build_image,
+    build_image_with_sector, crash_states, materialize, pending_ops,
+};
 pub use dir_vfs::DirVfs;
 pub use event::{CrashPoint, FileId, OpSpan, Trace, TraceEvent, TraceLog};
 pub use vfs::{OpenMode, Vfs};
