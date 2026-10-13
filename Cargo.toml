@@ -5,6 +5,8 @@ members = [
     "crates/cc-model",
     "crates/cc-trace",
     "crates/cc-adapter",
+    "crates/cc-workload",
+    "crates/cc-cli",
     "engines/toy-correct",
 ]
 

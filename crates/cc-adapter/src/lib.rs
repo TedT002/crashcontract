@@ -8,6 +8,8 @@
 //! adaptör çağrısı aynı sırayla, tek yerde yapılır. İşlem↔iz eşlemesindeki bir hata sessiz yanlış
 //! alarm ya da kaçırma üretir; tek nokta bu riski küçültür.
 
+pub mod runner;
+
 use std::fmt;
 use std::path::Path;
 

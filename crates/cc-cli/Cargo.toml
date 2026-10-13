@@ -1,0 +1,26 @@
+[package]
+name = "cc-cli"
+description = "CrashContract komut satırı: run / replay / minimize"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "crashcontract"
+path = "src/main.rs"
+
+[dependencies]
+# Op tipi.
+cc-model = { path = "../cc-model" }
+# CrashConfig.
+cc-trace = { path = "../cc-trace" }
+# StorageAdapter + runner.
+cc-adapter = { path = "../cc-adapter" }
+# Seed'li iş yükü.
+cc-workload = { path = "../cc-workload" }
+# Test edilen motor(lar).
+toy-correct = { path = "../../engines/toy-correct" }
+
+[lints]
+workspace = true

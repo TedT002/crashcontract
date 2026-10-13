@@ -16,3 +16,7 @@ cc-adapter = { path = "../../crates/cc-adapter" }
 
 [lints]
 workspace = true
+
+[dev-dependencies]
+# Runner testleri seed'li iş yükünü kullanır.
+cc-workload = { path = "../../crates/cc-workload" }

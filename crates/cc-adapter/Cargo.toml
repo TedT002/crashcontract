@@ -11,6 +11,8 @@ publish.workspace = true
 cc-model = { path = "../cc-model" }
 # TraceLog: apply_op her işlemin iz aralığını (span) çizer.
 cc-trace = { path = "../cc-trace" }
+# SplitMix64: runner'ın kesme örneklemesi iş yükü üreteciyle aynı PRNG'yi kullanır.
+cc-workload = { path = "../cc-workload" }
 
 [lints]
 workspace = true
