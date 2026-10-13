@@ -3,5 +3,26 @@
 version = 4
 
 [[package]]
+name = "cc-adapter"
+version = "0.1.0"
+dependencies = [
+ "cc-model",
+ "cc-trace",
+]
+
+[[package]]
 name = "cc-model"
 version = "0.1.0"
+
+[[package]]
+name = "cc-trace"
+version = "0.1.0"
+
+[[package]]
+name = "toy-correct"
+version = "0.1.0"
+dependencies = [
+ "cc-adapter",
+ "cc-model",
+ "cc-trace",
+]

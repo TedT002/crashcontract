@@ -1,0 +1,18 @@
+[package]
+name = "toy-correct"
+description = "CrashContract doğru referans motoru: WAL + checkpoint'li küçük KV deposu"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+# State/Write/Guarantees tipleri.
+cc-model = { path = "../../crates/cc-model" }
+# Vfs/DirVfs: motor dosya sistemine yalnız bu katmandan erişir (iz kaydı için).
+cc-trace = { path = "../../crates/cc-trace" }
+# StorageAdapter trait'i ve AdapterError.
+cc-adapter = { path = "../../crates/cc-adapter" }
+
+[lints]
+workspace = true

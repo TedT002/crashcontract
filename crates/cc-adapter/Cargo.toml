@@ -1,0 +1,16 @@
+[package]
+name = "cc-adapter"
+description = "CrashContract StorageAdapter trait'i: test edilen motorun sözleşmesi ve işlem uygulayıcı"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+# Op/History/Guarantees tipleri: adaptör motoru modelin diliyle konuşturur.
+cc-model = { path = "../cc-model" }
+# TraceLog: apply_op her işlemin iz aralığını (span) çizer.
+cc-trace = { path = "../cc-trace" }
+
+[lints]
+workspace = true

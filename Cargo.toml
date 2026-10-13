@@ -3,6 +3,9 @@ resolver = "3"
 # Açık liste: her crate kendi aşamasında buraya eklenir (glob yok — bkz. SPEC §0.2).
 members = [
     "crates/cc-model",
+    "crates/cc-trace",
+    "crates/cc-adapter",
+    "engines/toy-correct",
 ]
 
 [workspace.package]

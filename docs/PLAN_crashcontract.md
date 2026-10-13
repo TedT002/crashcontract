@@ -73,7 +73,7 @@ Asenkron/servis yok; bu bir CLI test aracıdır.
 
 ### Aşama 2 — Trace + toy motor (`cc-trace`, `cc-adapter`, `engines/toy-correct`)
 - **Çıktı:** `Vfs` trait'i (open/pwrite/write/fsync/fdatasync/rename/ftruncate/unlink/read/list),
-  bellek-içi `MemVfs`, kaydeden `RecordingVfs` → `Vec<TraceEvent>`; `StorageAdapter` trait'i
+  kaydeden `DirVfs` (gerçek dizin; `MemVfs` eklenmedi — SPEC_stage2 karar 8) → `Vec<TraceEvent>`; `StorageAdapter` trait'i
   (`guarantees()` cc-model tipini döndürür); `toy-correct`: WAL (uzunluk+CRC'li kayıt) + checkpoint
   (geçici dosyaya yaz → fsync → rename → dizin fsync).
 - **Kabul:** toy-correct çökme olmadan 1.000 seed'de `check_reads` = Allowed; iz, aynı seed'de
