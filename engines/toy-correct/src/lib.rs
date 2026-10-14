@@ -1,12 +1,12 @@
 //! # toy-correct — doğru çalışan referans motor
 //!
 //! WAL + checkpoint'li küçük bir KV deposu. Amacı hızlı olmak değil, **doğru** olmak ve her
-//! dayanıklılık kararını açıkça göstermek: Aşama 5'teki mutantlar bu motordan tek bir kararı
+//! dayanıklılık kararını açıkça göstermek: mutantlar (`toy-mutants`) bu motordan tek bir kararı
 //! bozarak türetilir ve araç onları yakalamak zorundadır.
 //!
 //! Motor dosya sistemine yalnız [`cc_trace::Vfs`] üzerinden erişir; böylece her çağrı ize girer.
 //!
-//! ## fsync düzeni (SPEC §4.3)
+//! ## fsync düzeni
 //!
 //! | # | Nokta | Çağrı dizisi | Neden |
 //! |---|-------|--------------|-------|

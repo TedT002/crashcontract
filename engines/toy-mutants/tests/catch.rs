@@ -1,4 +1,4 @@
-//! "Araç yakalıyor mu?" testleri (CLAUDE.md Aşama 5): her mutant, ortaya çıkabildiği yapılandırmada,
+//! "Araç yakalıyor mu?" testleri: her mutant, ortaya çıkabildiği yapılandırmada,
 //! ilk SEEDS seed'in en az MIN_RATE oranında yakalanmalı ve bulgu türü beklenen sınıflardan olmalı.
 //! Ayrıca doğru motor aynı yapılandırmalarda hiç bulgu vermemeli (yakalama mutasyondan gelir).
 
@@ -129,5 +129,5 @@ fn catalog_covers_all_mutations() {
         assert_eq!(s.config.mutation, Some(s.mutation));
         assert!(!s.expected.is_empty());
     }
-    assert!(c.len() >= 6, "CLAUDE.md: en az 6 hata sınıfı");
+    assert!(c.len() >= 6, "en az 6 hata sınıfı");
 }

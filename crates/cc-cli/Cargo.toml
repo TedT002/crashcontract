@@ -24,11 +24,11 @@ cc-adapter = { path = "../cc-adapter" }
 cc-workload = { path = "../cc-workload" }
 # Test edilen motor(lar).
 toy-correct = { path = "../../engines/toy-correct" }
-# Gerçek motor (Aşama 7): redb, ayrı sürücü sürecinde + LD_PRELOAD shim.
+# Gerçek motor: redb, ayrı sürücü sürecinde + LD_PRELOAD shim.
 redb-engine = { path = "../../engines/redb-engine" }
 # Bulgu küçültme (ddmin).
 cc-minimize = { path = "../cc-minimize" }
-# serde + serde_json: yeniden oynatılabilir JSON rapor (Aşama 6). JSON'u elle yazmak/okumak
+# serde + serde_json: yeniden oynatılabilir JSON rapor. JSON'u elle yazmak/okumak
 # hataya açık; serde_json fiili standart ve yalnız bu crate'te.
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

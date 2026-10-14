@@ -31,7 +31,7 @@ pub struct ToyConfig {
     /// Mevcut WAL'daki kayıt sayısı bu değere ulaşınca (işlemin içinde, kaydı yazdıktan sonra)
     /// checkpoint. 0 = otomatik checkpoint yok (açılış checkpoint'i her zaman yapılır).
     pub checkpoint_every: u32,
-    /// Bilerek yerleştirilmiş hata (Aşama 5); `None` = doğru motor.
+    /// Bilerek yerleştirilmiş hata (mutant); `None` = doğru motor.
     pub mutation: Option<Mutation>,
 }
 
@@ -82,7 +82,7 @@ fn apply_writes(state: &mut State, writes: &[Write]) {
     }
 }
 
-/// Checkpoint g → g+1 (C1–C4, SPEC §4.3). Yeni WAL'ın tanıtıcısını döndürür.
+/// Checkpoint g → g+1 (C1–C4, crate dokümanındaki fsync düzeni tablosu). Yeni WAL'ın tanıtıcısını döndürür.
 ///
 /// `old_wal`: hâlâ açık olan `wal-g` tanıtıcısı (kurtarma checkpoint'inde zaten kapalıdır).
 fn checkpoint(
@@ -204,7 +204,7 @@ impl ToyDb {
     }
 }
 
-/// Bir dizini açar / kurtarır (R1–R5, SPEC §4.4).
+/// Bir dizini açar / kurtarır (R1–R5).
 fn recover(mut vfs: Box<dyn Vfs>, cfg: &ToyConfig) -> Result<ToyDb, AdapterError> {
     // R1 — tanınmayan dosya, başka bir şeyin dizine yazdığını gösterir: tahmin etme, reddet.
     let names = vfs.list()?;

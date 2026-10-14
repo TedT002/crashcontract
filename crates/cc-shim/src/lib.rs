@@ -1,6 +1,6 @@
-//! # cc-shim — LD_PRELOAD ile dosya sistemi çağrılarını kaydetme (Aşama 7)
+//! # cc-shim — LD_PRELOAD ile dosya sistemi çağrılarını kaydetme
 //!
-//! CLAUDE.md karar 1: süreci öldürmek yerine motorun dosya sistemi çağrılarını kaydediyoruz. Toy
+//! süreci öldürmek yerine motorun dosya sistemi çağrılarını kaydediyoruz. Toy
 //! motorlar bunu `Vfs` üzerinden kendileri yapar; gerçek bir motorun koduna dokunamayız. Bu kütüphane
 //! `LD_PRELOAD` ile motor sürecine yüklenir, libc'nin `open64`/`pwrite64`/`fdatasync`/… sembollerini
 //! gölgeler: her çağrıyı gerçek libc'ye (`dlsym(RTLD_NEXT)`) iletir, **başarılı** olanları
@@ -11,7 +11,7 @@
 //!
 //! ## Hangi çağrılar? (ölçüldü — tahmin değil)
 //! redb sürücüsü `strace -f -e trace=file,desc` ve `nm -D --undefined-only` ile ölçüldü
-//! (docs/MEASUREMENTS.md): `open64, pwrite64, pread64, fdatasync, ftruncate64, close, flock, fcntl,
+//! (README, "Ölçümler"): `open64, pwrite64, pread64, fdatasync, ftruncate64, close, flock, fcntl,
 //! statx` + stdout için `write/writev`; veri dosyasına `mmap` YOK, ek iş parçacığı YOK. Kaydedilenler:
 //! açma (oluşturma dahil), konumlu yazma, kısaltma/uzatma, fsync/fdatasync, dizin fsync'i,
 //! rename/unlink. Okuma, kilit ve `statx` dayanıklı durumu değiştirmez → kaydedilmez.
@@ -20,7 +20,7 @@
 //! LD_PRELOAD yalnız dinamik sembol çağrılarını görür. glibc'nin kendi içinden yaptığı çağrılar
 //! (ör. `fopen` → `__open`), doğrudan `syscall(2)` ya da io_uring ile yapılan G/Ç görünmez; ayrıca
 //! `pwritev`/`copy_file_range`/`sendfile` gölgelenmiyor. Bu yüzden her motor için önce strace ile
-//! ölçülür: shim izi ile strace sayıları/sırası karşılaştırılır (docs/MEASUREMENTS.md).
+//! ölçülür: shim izi ile strace sayıları/sırası karşılaştırılır (README, "Ölçümler").
 //!
 //! ## Modellenmeyen çağrılar sessizce geçilmez
 //! İzlenen bir tanıtıcıya `write`/`writev` (konumsuz), `dup*`, `mmap`, `fallocate`,
@@ -828,7 +828,7 @@ pub unsafe extern "C" fn dup3(old: c_int, new: c_int, flags: c_int) -> c_int {
     unsafe { real(old, new, flags) }
 }
 
-/// mmap(2): izlenen dosyanın eşlenmesi kapsam dışı (CLAUDE.md karar 5).
+/// mmap(2): izlenen dosyanın eşlenmesi kapsam dışı.
 ///
 /// # Safety
 /// libc sözleşmesi.

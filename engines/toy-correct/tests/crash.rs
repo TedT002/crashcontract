@@ -1,4 +1,4 @@
-//! Duman testi (SPEC_stage3 §3, Aşama 4 öncesi): seed'li koşuların HER kesme noktasındaki HER çökme
+//! Duman testi: seed'li koşuların HER kesme noktasındaki HER çökme
 //! durumunda `toy-correct` izinli bir durum kurtarmalı. Doğru motorda tek bir ihlal ya da açılış
 //! hatası, üreticinin (ya da modelin) aşırı muhafazakâr olduğunu gösterir → yanlış alarm.
 

@@ -162,7 +162,7 @@ impl Vfs for DirVfs {
     }
 
     // fsync/fdatasync/sync_dir yalnız kaydedilir, gerçek sistem çağrısı yapılmaz: çökme durumları
-    // izden üretilir (karar 1), gerçek fsync doğruluk katmaz, yalnız yavaşlatır.
+    // izden üretilir, gerçek fsync doğruluk katmaz, yalnız yavaşlatır.
     fn fsync(&mut self, file: FileId) -> io::Result<()> {
         self.file(file)?;
         self.record(TraceEvent::Fsync { file });

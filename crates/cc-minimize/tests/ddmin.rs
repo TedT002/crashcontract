@@ -1,4 +1,4 @@
-//! ddmin birim testleri (SPEC_stage6 §2): bilinen minimum, 1-minimallik, boş girdi, determinizm.
+//! ddmin birim testleri: bilinen minimum, 1-minimallik, boş girdi, determinizm.
 
 use cc_minimize::ddmin;
 

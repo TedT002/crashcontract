@@ -87,7 +87,7 @@ fn encode_payload(writes: &[Write]) -> Vec<u8> {
 
 /// Tek bir WAL kaydını (başlık + payload) tek tamponda kodlar.
 ///
-/// Tek tampon önemli: motor kaydı tek `write_at` ile yazar; Aşama 3 tek bir yazıyı yırtabilir
+/// Tek tampon önemli: motor kaydı tek `write_at` ile yazar; çökme üreteci tek bir yazıyı yırtabilir
 /// (torn write) ama başlık ile payload'ı ayrı olaylar olarak sıralayamaz.
 pub fn encode_wal_record(lsn: u64, writes: &[Write]) -> Vec<u8> {
     let payload = encode_payload(writes);

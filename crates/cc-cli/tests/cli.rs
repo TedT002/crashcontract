@@ -1,4 +1,4 @@
-//! CLI testleri (SPEC_stage4 §3): çıkış kodları ve özet çıktısı.
+//! CLI testleri: çıkış kodları ve özet çıktısı.
 
 use std::process::Command;
 

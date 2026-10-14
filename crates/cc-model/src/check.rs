@@ -96,7 +96,7 @@ enum CutEvent<'a> {
     Cut(Cut),
 }
 
-/// İzinli kesmelerin TEK üreticisi (SPEC §4.2): `Cut{F,0}` ile başlar; `[F, n)` işlemlerini sırayla
+/// İzinli kesmelerin TEK üreticisi: `Cut{F,0}` ile başlar; `[F, n)` işlemlerini sırayla
 /// gezer; atomik olmayan modda txn içindeki her ara adımdan sonra da bir kesme üretir; her
 /// işlemden sonra `at_op(i+1)` üretir.
 ///
@@ -559,7 +559,7 @@ mod tests {
     }
 
     /// Prefix taraması ile sınıflandırmanın kullandığı `cut_list`, aynı yürütücüden gelir; yine de
-    /// sözleşmeyi sabitleriz: (1) kesme dizisi SPEC §4.2 sırasında, (2) her `(c, s)` için ilk `s`
+    /// sözleşmeyi sabitleriz: (1) kesme dizisi tanımlanan sırada, (2) her `(c, s)` için ilk `s`
     /// adımın uygulanmış hali `state_at(c)` ile aynı (s sayacı kesmeyle tutarlı), (3) prefix
     /// taramasının tanığı/en iyi kesmesi bu listenin içinden çıkar.
     #[test]

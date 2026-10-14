@@ -13,7 +13,7 @@ cc-model = { path = "../cc-model" }
 cc-trace = { path = "../cc-trace" }
 # SplitMix64: runner'ın kesme örneklemesi iş yükü üreteciyle aynı PRNG'yi kullanır.
 cc-workload = { path = "../cc-workload" }
-# serde: FailureCase/RunConfig JSON rapora girer (Aşama 6).
+# serde: FailureCase/RunConfig JSON rapora girer.
 serde = { version = "1", features = ["derive"] }
 
 [lints]

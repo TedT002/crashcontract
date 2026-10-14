@@ -1,4 +1,4 @@
-//! toy-correct motor testleri (SPEC_stage2 §6.1 Y05–Y21).
+//! toy-correct motor testleri.
 
 mod common;
 

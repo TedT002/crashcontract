@@ -2,9 +2,9 @@
 //!
 //! [`StorageAdapter`] her motoru (toy ya da gerçek) aynı arayüze indirger. En önemli parçası
 //! [`StorageAdapter::guarantees`]: model motoru **bildirdiği** garantilerle yargılar
-//! (CLAUDE.md karar 3), bu yüzden bildirim adaptörün sorumluluğundadır.
+//! bu yüzden bildirim adaptörün sorumluluğundadır.
 //!
-//! [`apply_op`] runner'ın (Aşama 4) tek uygulama noktasıdır: geçmişe kayıt, iz aralığı (span) ve
+//! [`apply_op`] runner'ın tek uygulama noktasıdır: geçmişe kayıt, iz aralığı (span) ve
 //! adaptör çağrısı aynı sırayla, tek yerde yapılır. İşlem↔iz eşlemesindeki bir hata sessiz yanlış
 //! alarm ya da kaçırma üretir; tek nokta bu riski küçültür.
 
@@ -51,7 +51,7 @@ impl From<std::io::Error> for AdapterError {
 
 /// Test edilen motorun sözleşmesi. Tek iş parçacıklı; her çağrı dönene kadar engeller.
 pub trait StorageAdapter: Sized {
-    /// Motor yapılandırması (Aşama 6 raporuna girer).
+    /// Motor yapılandırması (JSON rapora girer).
     type Config: Clone + std::fmt::Debug;
 
     /// Bildirilen garantiler YAPILANDIRMANIN fonksiyonudur (açık örnek gerektirmez: açılamayan
@@ -59,7 +59,7 @@ pub trait StorageAdapter: Sized {
     fn guarantees(config: &Self::Config) -> Guarantees;
 
     /// `dir` mevcut olmalı. `log` Some ise motorun tüm dosya sistemi olayları ona eklenir
-    /// (toy: `DirVfs`; gerçek motor: Aşama 7 shim). Açılış olayları ilk span'den önce yer alır.
+    /// (toy: `DirVfs`; gerçek motor: LD_PRELOAD shim). Açılış olayları ilk span'den önce yer alır.
     fn open(dir: &Path, config: &Self::Config, log: Option<TraceLog>)
     -> Result<Self, AdapterError>;
 
@@ -91,7 +91,7 @@ pub trait StorageAdapter: Sized {
     fn close(self) -> Result<(), AdapterError>;
 }
 
-/// Runner'ın (Aşama 4) tek uygulama noktası: `history.issue(op)` → `log.begin_op(i)` → adaptör
+/// Runner'ın tek uygulama noktası: `history.issue(op)` → `log.begin_op(i)` → adaptör
 /// çağrısı → `log.end_op(i)` → Put/Delete/Txn/Sync başarı: `ack(i)`; Get başarı: `ack_read(i, v)`;
 /// adaptör hatası: `fail(i, err.to_string())`. `i` döner.
 ///

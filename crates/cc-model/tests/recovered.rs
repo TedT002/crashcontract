@@ -1,4 +1,4 @@
-//! `check_recovered` sözleşme testleri (SPEC §6.2, R01–R36). Her test, çökme sonrası kurtarılan
+//! `check_recovered` sözleşme testleri (R01–R36). Her test, çökme sonrası kurtarılan
 //! durumun motorun BİLDİRDİĞİ garantilere göre izinli olup olmadığına dair tek bir kuralı doğrular.
 
 mod common;

@@ -7,7 +7,7 @@
 /// `write()` çoğu zaman yalnız OS sayfa önbelleğine yazar. BU MODELDE veri ancak
 /// `fsync`/`fdatasync` döndüğünde kalıcı sayılır (fsync sınırı). Not: `O_SYNC`/`O_DSYNC` ile açılmış
 /// dosyalar ve `sync`/`syncfs` de kalıcılık sağlar; bunların gerçek motorlarda nasıl göründüğü
-/// Aşama 3/7'de `strace` ile ÖLÇÜLECEK, şimdilik model yalnız fsync sınırını bilir.
+/// gerçek motorlarda `strace` ile ölçülür; model yalnız fsync sınırını bilir.
 ///
 /// Sayfa önbelleği SÜREÇ ölümünde korunur; sabitlenmemiş sayfalar yalnız SİSTEM çökmesinde/güç
 /// kaybında kaybolabilir. (Kullanıcı alanı tamponları — ör. henüz `write()` edilmemiş veri — ise

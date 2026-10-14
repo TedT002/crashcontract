@@ -1,4 +1,4 @@
-//! toy-correct seed'li testler (SPEC_stage2 §6.1 Y22–Y25): çökmesiz doğruluk, determinizm ve
+//! toy-correct seed'li testler: çökmesiz doğruluk, determinizm ve
 //! iz yapısının fsync düzenine uyumu.
 
 mod common;

@@ -3,7 +3,7 @@
 //!
 //! Her Put/Delete/Txn tek bir redb yazma işlemidir ve `Durability::Immediate` ile commit edilir
 //! (redb'nin varsayılanı): commit dönmeden önce veri fsync'lenmiş olmalıdır → bildirilen garanti
-//! `OnAck`. Bu bir İDDİA'dır; doğruluğu ölçülerek sınanır (Aşama 7).
+//! `OnAck`. Bu bir İDDİA'dır; doğruluğu ölçülerek sınanır.
 
 use std::io::BufRead;
 

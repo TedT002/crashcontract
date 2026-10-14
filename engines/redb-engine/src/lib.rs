@@ -1,4 +1,4 @@
-//! # redb-engine — gerçek motor adaptörü (Aşama 7)
+//! # redb-engine — gerçek motor adaptörü
 //!
 //! redb, ayrı bir sürücü sürecinde (`redb-driver`) çalışır; adaptör onunla satır başına JSON konuşur
 //! ([`protocol`]). Kayıtlı açılışta sürücü `LD_PRELOAD=libcc_shim.so` ile başlatılır: shim, redb'nin
@@ -11,7 +11,7 @@
 //! yeniden açılış, önceki koşunun hiçbir süreç içi durumunu (sayfa önbelleği dışında — o da zaten
 //! materyalize edilen görüntüdür) görmemeli: her açılış yeni bir süreçtir.
 //!
-//! ## Bildirilen garantiler (iddia — ölçülerek sınandı, bkz. docs/MEASUREMENTS.md)
+//! ## Bildirilen garantiler (iddia — ölçülerek sınandı, bkz. README)
 //! Her işlem tek bir redb yazma işlemi ve `Durability::Immediate` (varsayılan) ile commit edilir:
 //! `OnAck`; txn atomik; durum her zaman bir prefix.
 
@@ -197,7 +197,7 @@ impl StorageAdapter for RedbProc {
             .env_remove("CC_SHIM_TRACE");
         let mut tail = None;
         if let Some(log) = log {
-            // İz boş dizinde başlar (Aşama 2 karar 5): başlangıç görüntüsü = boş dizin.
+            // İz boş dizinde başlar: başlangıç görüntüsü = boş dizin.
             if fs::read_dir(&dir)?.next().is_some() {
                 return Err(AdapterError::Io(std::io::Error::new(
                     std::io::ErrorKind::DirectoryNotEmpty,

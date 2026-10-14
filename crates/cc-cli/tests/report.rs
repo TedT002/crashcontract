@@ -1,4 +1,4 @@
-//! Rapor + küçültme + replay testleri (SPEC_stage6 §2): her mutant için küçültülmüş rapor aynı bulgu
+//! Rapor + küçültme + replay testleri: her mutant için küçültülmüş rapor aynı bulgu
 //! sınıfını korur, JSON gidiş-dönüş eşittir ve replay sonucu bire bir aynıdır.
 
 use std::path::PathBuf;

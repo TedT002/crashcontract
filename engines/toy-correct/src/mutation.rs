@@ -1,4 +1,4 @@
-//! Bilerek yerleştirilmiş hatalar (Aşama 5, CLAUDE.md karar 4: "araç kendini kanıtlamak zorunda").
+//! Bilerek yerleştirilmiş hatalar ("araç kendini kanıtlamak zorunda").
 //!
 //! Neden ayrı bir kod kopyası değil de yapılandırma alanı? Mutant ile doğru motor arasındaki TEK fark
 //! mutasyonun kendisi olmalı. Ayrı kopya zamanla sürüklenir ve "araç mutantı yakaladı" iddiası

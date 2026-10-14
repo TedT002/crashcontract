@@ -1,6 +1,6 @@
 //! # cc-workload — seed'li iş yükü üreteci
 //!
-//! Tek iş parçacıklı, sıralı bir işlem dizisi üretir (CLAUDE.md karar 5). Aynı seed + aynı
+//! Tek iş parçacıklı, sıralı bir işlem dizisi üretir. Aynı seed + aynı
 //! yapılandırma her zaman aynı diziyi verir; bir hata raporu yalnız seed'i saklayarak iş yükünü
 //! yeniden üretebilir.
 //!
@@ -8,7 +8,7 @@
 //!
 //! `rand`'ın `StdRng` algoritması sürümler arası garanti edilmez; değişirse eski raporlar aynı iş
 //! yükünü üretemez. SplitMix64 birkaç satırdır ve sabit kalır. Dağılım ya da üretim sırası
-//! değişirse rapor şeması sürümü artırılmalıdır (Aşama 6).
+//! değişirse rapor şeması sürümü artırılmalıdır.
 //!
 //! ## Neden küçük anahtar uzayı?
 //!

@@ -5,7 +5,7 @@ use std::fmt;
 
 /// İhlal sınıfı. Minimizer "aynı türde ihlal hâlâ var mı?" sorusunu bununla sorar.
 ///
-/// Hata sınıfı → ihlal eşlemesi, toy mutantlarıyla ÖLÇÜLDÜ (Aşama 5, `engines/toy-mutants`, 40 seed;
+/// Hata sınıfı → ihlal eşlemesi, toy mutantlarıyla ÖLÇÜLDÜ (`engines/toy-mutants`, 40 seed;
 /// yalnız bu motor için geçerli): fsync atlama → `LostDurableWrite`; WAL replay'de son kaydı atma →
 /// `LostDurableWrite`; tombstone yoksayma → `ResurrectedDelete` (txn içi silmede `PartialTxn`);
 /// kısmi kaydı geçerli sayma → `PhantomValue` / `PrefixViolation` ya da kurtarma hatası; txn'i

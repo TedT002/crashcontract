@@ -1,4 +1,4 @@
-//! cc-trace kontrat testleri (SPEC_stage2 §6.1 T01–T09).
+//! cc-trace kontrat testleri.
 
 mod common;
 

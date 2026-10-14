@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-# Açık liste: her crate kendi aşamasında buraya eklenir (glob yok — bkz. SPEC §0.2).
+# Açık liste: her crate kendi aşamasında buraya eklenir (glob yok: Cargo, Cargo.toml'u olmayan bir glob eşleşmesinde hata verir).
 members = [
     "crates/cc-model",
     "crates/cc-trace",
@@ -21,7 +21,7 @@ rust-version = "1.98"
 publish = false
 
 [workspace.lints.rust]
-# Yalnızca cc-shim (Aşama 7, LD_PRELOAD) crate seviyesinde gerekçeli #![allow(unsafe_code)] ile açar.
+# Yalnızca cc-shim (LD_PRELOAD) crate seviyesinde gerekçeli #![allow(unsafe_code)] ile açar.
 # "forbid" değil "deny": forbid, crate seviyesinde allow ile geçersiz kılınamaz.
 unsafe_code = "deny"
 missing_docs = "warn"

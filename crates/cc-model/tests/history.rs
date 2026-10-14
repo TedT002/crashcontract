@@ -1,4 +1,4 @@
-//! `History` sözleşme testleri (SPEC §6.2, H01–H11): yaşam döngüsü, değişmezler (I1/I2),
+//! `History` sözleşme testleri (H01–H11): yaşam döngüsü, değişmezler (I1/I2),
 //! dayanıklılık tabanı, `crash_view` ve `state_at`.
 
 mod common;
@@ -186,7 +186,7 @@ fn h10_crash_view_completed_out_of_range_panics() {
     let _ = h10_base().crash_view(4, false);
 }
 
-// H10 ek (SPEC §3.3 Panics): in_flight iken completed >= len() panic.
+// H10 ek: in_flight iken completed >= len() panic.
 #[test]
 #[should_panic(expected = "in_flight için completed (3) < len olmalı")]
 fn h10_crash_view_inflight_at_len_panics() {

@@ -1,4 +1,4 @@
-//! cc-workload testleri (SPEC_stage4 §3): determinizm, sınırlar, dağılım.
+//! cc-workload testleri: determinizm, sınırlar, dağılım.
 
 use cc_model::{Op, Write};
 use cc_workload::{OpWeights, SplitMix64, WorkloadConfig, generate};

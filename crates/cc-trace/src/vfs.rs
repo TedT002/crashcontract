@@ -17,7 +17,7 @@ pub enum OpenMode {
 /// Toy motorların dosya sistemine TEK erişim yolu (nesne-güvenli; motor `Box<dyn Vfs>` tutar).
 ///
 /// Motor `std::fs`'e doğrudan dokunmaz: dokunsaydı o çağrılar izde görünmez, çökme durumu
-/// üreteci (Aşama 3) onları hesaba katamazdı.
+/// üreteci onları hesaba katamazdı.
 pub trait Vfs {
     /// Kökteki `name` dosyasını açar.
     fn open(&mut self, name: &str, mode: OpenMode) -> io::Result<FileId>;

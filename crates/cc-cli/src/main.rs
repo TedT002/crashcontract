@@ -1,11 +1,11 @@
 //! # crashcontract — komut satırı
 //!
 //! `crashcontract run`: seed aralığındaki her iş yükünü motora uygular, izden çökme durumları
-//! üretir ve motoru her durumdan yeniden açıp modelle yargılar (SPEC_stage4 §2).
+//! üretir ve motoru her durumdan yeniden açıp modelle yargılar.
 //!
 //! Argüman ayrıştırma elle yazıldı (`clap` yok: bağımlılık minimum). Paralellik
 //! `std::thread::scope` ile: her iş parçacığı kendi çalışma dizininde, birbirinden bağımsız seed'ler
-//! koşar — iş yükü yine tek iş parçacıklıdır (karar 5), paralel olan yalnız seed'lerdir.
+//! koşar — iş yükü yine tek iş parçacıklıdır (kapsam), paralel olan yalnız seed'lerdir.
 
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;

@@ -1,4 +1,4 @@
-//! `check_reads` sözleşme testleri (SPEC §6.2, D01–D06): çalışma sırasındaki Get'ler
+//! `check_reads` sözleşme testleri (D01–D06): çalışma sırasındaki Get'ler
 //! kendinden önceki tüm yazmaların uygulanmış haline eşit olmalı (read-your-writes).
 
 mod common;

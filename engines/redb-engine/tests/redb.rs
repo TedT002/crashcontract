@@ -1,4 +1,4 @@
-//! redb adaptörü testleri (Aşama 7). `libcc_shim.so` ve `redb-driver` derlenmiş olmalı:
+//! redb adaptörü testleri. `libcc_shim.so` ve `redb-driver` derlenmiş olmalı:
 //! `cargo build -p cc-shim -p redb-engine` (CI bunu testlerden önce yapar). Eksikse testler açık bir
 //! mesajla başarısız olur — sessizce atlanmaz.
 
@@ -96,7 +96,7 @@ fn shim_records_redb_io() {
 }
 
 /// Linux modeli + açılış fazı atlanmış: işlem fazında yanlış alarm yok (küçük örnek; büyük ölçüm
-/// docs/MEASUREMENTS.md'de).
+/// README'de).
 #[test]
 fn linux_model_no_false_alarm() {
     let d = dir("linux");
@@ -146,7 +146,7 @@ fn posix_model_finds_missing_dir_fsync() {
 
 /// redb 4.3.0 hatası: `Database::create` ön tahsisten (ftruncate) sonra, magic numaralı başlık
 /// yazılmadan çökerse dosya kalıcı olarak açılamaz. İşlem gerekmez; her iki FS modelinde de çıkar
-/// (süreç öldürmeyle de doğrulandı — docs/MEASUREMENTS.md).
+/// (süreç öldürmeyle de doğrulandı — README).
 #[test]
 fn create_crash_leaves_unopenable_file() {
     let d = dir("create");

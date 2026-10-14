@@ -1,4 +1,4 @@
-//! Shim iz satırı formatı (Aşama 7): `cc-shim` (LD_PRELOAD) yazar, motor adaptörü okur.
+//! Shim iz satırı formatı: `cc-shim` (LD_PRELOAD) yazar, motor adaptörü okur.
 //!
 //! Neden JSON değil de sade metin? Shim, başka bir sürecin libc çağrılarının ortasında çalışır;
 //! orada mümkün olduğunca az iş yapılmalı. Her olay tek satırdır ve tek `write` ile eklenir; adlar ve

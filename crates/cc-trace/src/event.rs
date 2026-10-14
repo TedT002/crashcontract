@@ -146,7 +146,7 @@ impl TraceLog {
         TraceLog::default()
     }
 
-    /// Olay ekler (DirVfs; Aşama 7'de shim okuyucusu).
+    /// Olay ekler (DirVfs; gerçek motorlarda shim okuyucusu).
     pub fn push(&self, event: TraceEvent) {
         self.inner.borrow_mut().trace.events.push(event);
     }

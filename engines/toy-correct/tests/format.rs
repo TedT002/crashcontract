@@ -1,4 +1,4 @@
-//! toy-correct bayt formatı testleri (SPEC_stage2 §6.1 Y01–Y04).
+//! toy-correct bayt formatı testleri.
 
 use cc_adapter::AdapterError;
 use cc_model::{State, Write};

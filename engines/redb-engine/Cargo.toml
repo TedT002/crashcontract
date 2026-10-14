@@ -11,7 +11,7 @@ name = "redb-driver"
 path = "src/bin/redb-driver.rs"
 
 [dependencies]
-# Test edilen gerçek motor (Aşama 7). Yalnız sürücü ikilisi onu çağırır; adaptör süreç dışından konuşur.
+# Test edilen gerçek motor. Yalnız sürücü ikilisi onu çağırır; adaptör süreç dışından konuşur.
 redb = "4"
 # Op/State tipleri ve bayt gösterimi.
 cc-model = { path = "../../crates/cc-model" }

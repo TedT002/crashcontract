@@ -1,4 +1,4 @@
-//! Bayt gösterimi testleri (SPEC_stage6 §2): tersinirlik ve bozuk girdi reddi.
+//! Bayt gösterimi testleri: tersinirlik ve bozuk girdi reddi.
 
 use cc_model::bytes_repr::{decode, encode};
 

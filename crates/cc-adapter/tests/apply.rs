@@ -1,4 +1,4 @@
-//! cc-adapter kontrat testleri (SPEC_stage2 §6.1 A01–A03).
+//! cc-adapter kontrat testleri.
 
 use std::collections::BTreeMap;
 use std::path::Path;

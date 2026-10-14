@@ -1,5 +1,5 @@
 //! Runner: bir iş yükünü motora uygular, izden çökme durumları üretir, motoru her durumdan yeniden
-//! açar ve kurtarılan durumu modelle karşılaştırır (SPEC_stage4).
+//! açar ve kurtarılan durumu modelle karşılaştırır.
 //!
 //! Akış (tek seed):
 //! 1. Boş `workdir/run/` dizininde kayıtlı açılış + işlemler (`apply_op`): geçmiş + iz.
@@ -9,7 +9,7 @@
 //! 4. Her durum `workdir/crash/`'e materyalize edilir, motor kayıtsız açılır, `scan` sonucu
 //!    `check_recovered` ile motorun **bildirdiği** garantilere göre yargılanır.
 //!
-//! İlk bulguda durulur: minimizer (Aşama 6) tek bir karşı örnekle çalışır.
+//! İlk bulguda durulur: minimizer tek bir karşı örnekle çalışır.
 
 use std::fmt;
 use std::fs;
@@ -86,7 +86,7 @@ impl fmt::Display for Finding {
     }
 }
 
-/// Bir bulgunun tam bağlamı (Aşama 6 raporu ve replay bunu kullanır).
+/// Bir bulgunun tam bağlamı (JSON rapor ve replay bunu kullanır).
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct FailureCase {
     /// Kesme noktası; `None` = çökmesiz koşudaki okuma ihlali.

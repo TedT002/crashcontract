@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 //! Testler için küçük DSL: geçmiş/işlem/durum kurmayı tek satıra indirir, böylece
-//! test tablosu (SPEC §6.2) okunabilir kalır.
+//! test tablosu okunabilir kalır.
 
 use cc_model::{Durability, Entry, Guarantees, History, Key, Op, Outcome, State, Value, Write};
 

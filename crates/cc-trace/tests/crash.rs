@@ -1,4 +1,4 @@
-//! Çökme durumu üreteci testleri (SPEC_stage3 §3 C01–C16): elle yazılmış izler, beklenen
+//! Çökme durumu üreteci testleri: elle yazılmış izler, beklenen
 //! görüntü kümeleri birebir.
 
 mod common;

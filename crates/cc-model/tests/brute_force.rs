@@ -1,4 +1,4 @@
-//! Kaba kuvvet karşılaştırma testi (SPEC Doğrulama Planı): prefix modunun artımlı sayaçlı
+//! Kaba kuvvet karşılaştırma testi: prefix modunun artımlı sayaçlı
 //! algoritması, her izinli kesmenin `state_at` ile tek tek hesaplanıp R ile karşılaştırılmasıyla
 //! (açıkça "yavaş ama aşikâr doğru" referans) aynı Allowed/Violated kararını ve aynı tanığı vermeli.
 //! Rastgelelik: elle yazılmış SplitMix64 + sabit seed -> tamamen deterministik, flaky değil.
@@ -77,7 +77,7 @@ fn rand_history(rng: &mut SplitMix64) -> History {
     hist(entries)
 }
 
-/// SPEC §4.1'in yeniden yazımı. DİKKAT: bu, `History::durable_floor` tanımının aynı mantıkla
+/// Dayanıklılık tabanı tanımının yeniden yazımı. DİKKAT: bu, `History::durable_floor` tanımının aynı mantıkla
 /// ikinci bir yazılışıdır; ortak bir yanlış anlamayı yakalamaz, yalnızca iki ayrı yazımın
 /// (kütüphane ↔ test) uyuştuğunu doğrular. Gerçek bağımsızlık sağlamaz.
 fn ref_floor(h: &History, d: Durability) -> usize {
@@ -95,7 +95,7 @@ fn ref_floor(h: &History, d: Durability) -> usize {
     }
 }
 
-/// SPEC §4.2: sıralı izinli kesme listesi.
+/// Sıralı izinli kesme listesi.
 fn ref_cuts(h: &History, f: usize, atomic: bool) -> Vec<Cut> {
     let mut cuts = vec![Cut::at_op(f)];
     for i in f..h.len() {

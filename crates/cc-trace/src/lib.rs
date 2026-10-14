@@ -1,11 +1,11 @@
 //! # cc-trace — I/O izi ve kaydeden dosya sistemi katmanı
 //!
-//! ## Neden süreci öldürmek yerine kaydet-ve-oynat? (CLAUDE.md karar 1)
+//! ## Neden süreci öldürmek yerine kaydet-ve-oynat?
 //!
 //! Dışarıdan `kill` deterministik değildir; daha önemlisi süreç öldüğünde OS sayfa önbelleği
 //! yazıları korur, yani `fsync`'i unutan bir motor `kill` testinden **temiz geçer**. Gerçek kayıp
 //! ancak sistem çökmesinde / güç kaybında olur. Bu yüzden motorun dosya sistemi çağrılarını bir
-//! **iz** olarak kaydediyoruz; Aşama 3 bu izden "fsync ile sabitlenmemiş yazılar düşmüş olabilir"
+//! **iz** olarak kaydediyoruz; çökme durumu üreteci bu izden "fsync ile sabitlenmemiş yazılar düşmüş olabilir"
 //! kuralıyla çökme durumlarını üretir. Aynı iz → aynı durumlar: yeniden üretilebilirlik buradan gelir.
 //!
 //! ## Neden veri olayları `FileId`, ad olayları yol bazlı?

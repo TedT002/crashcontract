@@ -1,4 +1,4 @@
-//! Çökme durumu üreteci: iz + kesme noktası → izinli dizin görüntüleri (SPEC_stage3 §0).
+//! Çökme durumu üreteci: iz + kesme noktası → izinli dizin görüntüleri.
 //!
 //! ## Neden "bekleyen işlemlerin herhangi bir alt kümesi"?
 //!
@@ -14,7 +14,7 @@
 //! İçerik inode'a, ad dizine aittir. `fsync(fd)` inode'u sabitler; yeni oluşturulan bir dosyanın,
 //! yeniden adlandırılan ya da silinen bir girdinin kalıcılığı için dizinin kendisi fsync'lenmelidir.
 //! ext4 yeni dosyada bunu fiilen yapsa da POSIX garanti etmez; gerçek bir motor buna güveniyorsa bu
-//! model yanlış alarm verebilir → Aşama 7'de strace ile ölçülüp not düşülecek.
+//! model yanlış alarm verebilir → gerçek motorda strace ile ölçülüp not düşülür (bkz. redb).
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
@@ -430,7 +430,7 @@ pub fn pending_ops(events: &[TraceEvent], cut: usize) -> Result<Vec<usize>, Cras
 }
 
 /// `(events, cut, choice)` → tek dizin görüntüsü, varsayılan modelle (katı POSIX, 512 B sektör).
-/// Aşama 6 `replay` bu üçlüyü saklar; durumu farklı bir [`CrashConfig`] ile ürettiyseniz
+/// `replay` bu üçlüyü saklar; durumu farklı bir [`CrashConfig`] ile ürettiyseniz
 /// [`build_image_with`] kullanın.
 pub fn build_image(
     events: &[TraceEvent],
@@ -463,7 +463,7 @@ impl SplitMix64 {
     }
 }
 
-/// Kesme noktasındaki çökme durumları (SPEC_stage3 §2 sırasıyla, görüntüye göre tekrarsız).
+/// Kesme noktasındaki çökme durumları.
 ///
 /// Neden tam alt küme listesi her zaman değil? `n` bekleyen işlem 2^n durum verir; grup commit'li
 /// bir motorda n kolayca 50'yi geçer. Bu yüzden küçük n'de tam liste, büyük n'de yapısal aileler

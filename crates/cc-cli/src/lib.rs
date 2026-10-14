@@ -5,7 +5,7 @@
 //!
 //! ## Rapor neden kendi başına yeterli olmalı?
 //!
-//! CLAUDE.md: "tek komutla yeniden oynatılabilir bir rapor". Rapor; motor + yapılandırma, seed,
+//! Hedef: tek komutla yeniden oynatılabilen bir rapor. Rapor; motor + yapılandırma, seed,
 //! küçültülmüş işlem dizisi, çökme seçimi (`cut` + `choice`), kurtarılan durum, tam geçmiş ve izi
 //! taşır. `replay` yalnız bu dosyadan aynı koşuyu yapar ve `failure` alanını **bire bir**
 //! karşılaştırır: iz, geçmiş, kesme, seçim, kurtarılan durum ve bulgu aynı olmalı.

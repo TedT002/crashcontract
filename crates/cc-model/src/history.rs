@@ -138,7 +138,7 @@ impl History {
         History::default()
     }
 
-    /// Hazır kayıtlardan geçmiş kurar; I1/I2'yi doğrular. (Testler ve Aşama 6 rapor okuma için.)
+    /// Hazır kayıtlardan geçmiş kurar; I1/I2'yi doğrular. (Testler ve JSON rapor okuma için.)
     /// Hata önceliği: kayıtlar baştan sona taranır; ilk bozulan kayıt için önce I2
     /// (`OutcomeMismatch`), sonra I1 (`UncertainNotLast`) kontrol edilir.
     /// Son kaydın `Issued` olması geçerlidir.
@@ -246,11 +246,11 @@ impl History {
         }
     }
 
-    /// Aşama 4 runner'ı için: tam koşu geçmişinden, çökme noktasına göre bir görünüm üretir.
+    /// Runner için: tam koşu geçmişinden, çökme noktasına göre bir görünüm üretir.
     /// Sonuç: kayıtlar [0, completed) aynen; `in_flight` ise `completed` indeksli işlem
     /// `Outcome::InFlight` ile eklenir; geri kalan atılır.
     ///
-    /// Aşama 4'te iz (trace) bir olay indeksinden kesilir; kesilen noktada "kaç işlem tamamen
+    /// Runner'da iz (trace) bir olay indeksinden kesilir; kesilen noktada "kaç işlem tamamen
     /// bitti, sıradaki işlemin ortasında mıyız" sorusunun cevabı bu iki argümandır. Böylece
     /// aynı tam koşudan her çökme noktası için tutarlı bir geçmiş görünümü çıkar.
     ///

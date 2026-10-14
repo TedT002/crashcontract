@@ -1,4 +1,4 @@
-//! Runner testleri (SPEC_stage4 §3): doğru motor temiz geçer; bilerek yanlış adaptörler bulgu üretir.
+//! Runner testleri: doğru motor temiz geçer; bilerek yanlış adaptörler bulgu üretir.
 
 mod common;
 

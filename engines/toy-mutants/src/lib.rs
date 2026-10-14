@@ -1,6 +1,6 @@
 //! # toy-mutants — bilerek hatalı motorlar kataloğu
 //!
-//! CLAUDE.md karar 4: "Araç kendini kanıtlamak zorunda." Her mutant, `toy-correct`'in tek bir
+//! "Araç kendini kanıtlamak zorunda." Her mutant, `toy-correct`'in tek bir
 //! dayanıklılık kararını bozar ([`toy_correct::Mutation`]); bu crate hangi hata sınıfını temsil
 //! ettiklerini, hangi yapılandırmada ortaya çıkabildiklerini ve aracın onları hangi bulgu türüyle
 //! yakalaması beklendiğini tutar. `tests/catch.rs` her mutantın gerçekten yakalandığını doğrular.
@@ -27,7 +27,7 @@ pub enum Expected {
 pub struct MutantSpec {
     /// Mutasyon.
     pub mutation: Mutation,
-    /// CLAUDE.md Aşama 5'teki hata sınıfı.
+    /// Temsil ettiği hata sınıfı.
     pub bug_class: &'static str,
     /// Hedeflenen crash-consistency kavramı.
     pub concept: &'static str,
@@ -114,7 +114,7 @@ pub fn catalog() -> Vec<MutantSpec> {
             config: cfg(SplitTxnRecords, EveryCommit, 0),
             needs_torn: false,
             // Yarım txn'in görünen ara değeri bir Delete (yok) ya da eski bir değerse, sınıflandırıcı
-            // eski-değer açıklamasını önceler (SPEC_stage1 §4.6(a) kural sırası) → LostDurableWrite.
+            // eski-değer açıklamasını önceler (model sınıflandırmasının kural sırası) → LostDurableWrite.
             // Hüküm (ihlal) aynıdır; yalnız etiket iki geçerli açıklamadan birini seçer.
             expected: &[V(PartialTxn), V(LostDurableWrite)],
         },
