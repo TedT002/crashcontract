@@ -32,11 +32,12 @@ pub mod crash;
 mod dir_vfs;
 mod event;
 mod hex;
+pub mod shim_format;
 mod vfs;
 
 pub use crash::{
-    Choice, CrashConfig, CrashError, CrashState, Image, TornWrite, build_image,
-    build_image_with_sector, crash_states, materialize, pending_ops,
+    Choice, CrashConfig, CrashError, CrashState, Image, TornWrite, build_image, build_image_with,
+    crash_states, materialize, pending_ops,
 };
 pub use dir_vfs::DirVfs;
 pub use event::{CrashPoint, FileId, OpSpan, Trace, TraceEvent, TraceLog};

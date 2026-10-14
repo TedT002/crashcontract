@@ -7,9 +7,11 @@ members = [
     "crates/cc-adapter",
     "crates/cc-workload",
     "crates/cc-minimize",
+    "crates/cc-shim",
     "crates/cc-cli",
     "engines/toy-correct",
     "engines/toy-mutants",
+    "engines/redb-engine",
 ]
 
 [workspace.package]
@@ -28,3 +30,10 @@ missing_docs = "warn"
 dbg_macro = "warn"
 todo = "warn"
 unimplemented = "warn"
+
+# redb'nin `debug_assertions` dalları disk görüntüsünü derleme profiline bağımlı kılıyor (ölçüldü:
+# aynı iş yükünde debug ve release sürücülerin yazdığı başlıkta 48 bayt fark). Raporların her
+# profilde bire bir replay edilebilmesi için redb her profilde aynı derlenir; testler de hızlanır.
+[profile.dev.package.redb]
+debug-assertions = false
+opt-level = 3

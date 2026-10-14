@@ -341,3 +341,35 @@ fn c16_materialize() {
     let err = materialize(&image, &dir).unwrap_err();
     assert_eq!(err.kind(), std::io::ErrorKind::DirectoryNotEmpty);
 }
+
+/// C17: dosya fsync'i ve yeni dosyanın adı. Katı POSIX'te ad dizin fsync'i olmadan kalıcı değildir
+/// (dosya tümden kaybolabilir); Linux-benzeri modelde yeni dosyanın fdatasync'i adı da sabitler.
+/// redb tam olarak bu düzeni kullanır (O_CREAT + fdatasync, dizin fsync'i yok — ölçüldü).
+#[test]
+fn c17_new_file_dirent_model() {
+    let ev = vec![
+        create("a", F0),
+        write(F0, 0, b"x"),
+        E::Fdatasync { file: F0 },
+    ];
+    assert_eq!(images(&ev), set(vec![img(&[]), img(&[("a", b"x")])]));
+    let linux = CrashConfig {
+        fsync_persists_new_dirent: true,
+        ..CrashConfig::default()
+    };
+    let imgs: BTreeSet<Image> = crash_states(&ev, ev.len(), 0, &linux)
+        .unwrap()
+        .into_iter()
+        .map(|s| s.image)
+        .collect();
+    assert_eq!(imgs, set(vec![img(&[("a", b"x")])]));
+    // Rename gibi diğer ad işlemleri Linux modelinde de dizin fsync'i bekler.
+    let mut ev2 = ev.clone();
+    ev2.extend([rename("a", "b"), E::Fdatasync { file: F0 }]);
+    let imgs: BTreeSet<Image> = crash_states(&ev2, ev2.len(), 0, &linux)
+        .unwrap()
+        .into_iter()
+        .map(|s| s.image)
+        .collect();
+    assert_eq!(imgs, set(vec![img(&[("a", b"x")]), img(&[("b", b"x")])]));
+}

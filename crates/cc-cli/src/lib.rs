@@ -18,6 +18,7 @@ use cc_adapter::runner::{FailureCase, Finding, RunConfig, RunError, SeedOutcome,
 use cc_minimize::{Stats, minimize};
 use cc_model::{Guarantees, Op};
 use cc_workload::{WorkloadConfig, generate};
+use redb_engine::{REDB_VERSION, RedbConfig, RedbProc};
 use toy_correct::{ToyConfig, ToyDb};
 
 /// Rapor şeması sürümü. Alan anlamı, seed → iş yükü eşlemesi ya da çökme durumu üretimi
@@ -30,6 +31,8 @@ pub const SCHEMA_VERSION: u32 = 1;
 pub enum EngineSpec {
     /// WAL + checkpoint'li toy motor (mutasyon yapılandırmada).
     Toy(ToyConfig),
+    /// redb (gerçek motor; ayrı süreç + LD_PRELOAD shim).
+    Redb(RedbConfig),
 }
 
 impl EngineSpec {
@@ -40,6 +43,15 @@ impl EngineSpec {
                 None => "toy-correct".into(),
                 Some(m) => format!("toy-mutant:{}", m.name()),
             },
+            EngineSpec::Redb(_) => "redb".into(),
+        }
+    }
+
+    /// Motorun sürümü (rapora girer).
+    pub fn version(&self) -> String {
+        match self {
+            EngineSpec::Toy(_) => format!("toy (crashcontract {})", env!("CARGO_PKG_VERSION")),
+            EngineSpec::Redb(_) => format!("redb {REDB_VERSION}"),
         }
     }
 
@@ -47,6 +59,7 @@ impl EngineSpec {
     pub fn guarantees(&self) -> Guarantees {
         match self {
             EngineSpec::Toy(c) => ToyDb::guarantees(c),
+            EngineSpec::Redb(c) => RedbProc::guarantees(c),
         }
     }
 
@@ -60,6 +73,7 @@ impl EngineSpec {
     ) -> Result<SeedOutcome, RunError> {
         match self {
             EngineSpec::Toy(c) => run_case::<ToyDb>(ops, c, workdir, seed, rc),
+            EngineSpec::Redb(c) => run_case::<RedbProc>(ops, c, workdir, seed, rc),
         }
     }
 
@@ -73,6 +87,7 @@ impl EngineSpec {
     ) -> Result<cc_minimize::Minimized, RunError> {
         match self {
             EngineSpec::Toy(c) => minimize::<ToyDb>(ops, c, workdir, seed, rc, target),
+            EngineSpec::Redb(c) => minimize::<RedbProc>(ops, c, workdir, seed, rc, target),
         }
     }
 }
@@ -86,6 +101,9 @@ pub struct Report {
     pub tool_version: String,
     /// Motor + yapılandırma.
     pub engine: EngineSpec,
+    /// Motor sürümü (eski raporlarda yok → boş).
+    #[serde(default)]
+    pub engine_version: String,
     /// Motorun bildirdiği garantiler (hüküm bunlara göre verildi).
     pub guarantees: Guarantees,
     /// Kaynak seed (iş yükü üretimi ve çökme durumu örneklemesi).
@@ -128,6 +146,7 @@ pub fn report_for_seed(
         schema_version: SCHEMA_VERSION,
         tool_version: env!("CARGO_PKG_VERSION").into(),
         engine: engine.clone(),
+        engine_version: engine.version(),
         guarantees: engine.guarantees(),
         seed,
         workload: workload.clone(),

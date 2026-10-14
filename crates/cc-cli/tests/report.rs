@@ -26,6 +26,7 @@ fn first_report(spec: &toy_mutants::MutantSpec, minimize: bool, tag: &str) -> Re
             ..CrashConfig::default()
         },
         cuts: CutSelection::All,
+        skip_open_phase: false,
     };
     let wd = dir(&format!("{tag}-{}-{minimize}", spec.mutation.name()));
     (0..10)

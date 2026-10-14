@@ -1,0 +1,21 @@
+[package]
+name = "cc-shim"
+description = "CrashContract LD_PRELOAD katmanı: gerçek motorların dosya sistemi çağrılarını iz olarak kaydeder"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[lib]
+# Yalnız cdylib: rlib olarak başka bir ikiliye bağlanırsa o ikilinin open64/pwrite64'ünü ele geçirirdi.
+crate-type = ["cdylib"]
+
+[dependencies]
+# libc: dlsym(RTLD_NEXT), fstat, getcwd ve C tip tanımları. LD_PRELOAD katmanı libc ABI'siyle
+# konuşmak zorunda; elle FFI bildirimi yazmak hataya açık.
+libc = "0.2"
+# İz satırı formatı (shim_format): okuyucu ile aynı kaynak.
+cc-trace = { path = "../cc-trace" }
+
+[lints]
+workspace = true

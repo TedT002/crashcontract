@@ -18,6 +18,7 @@ use cc_adapter::runner::{
 use cc_cli::{EngineSpec, read_report, replay, report_file_name, report_for_seed, write_report};
 use cc_trace::CrashConfig;
 use cc_workload::{WorkloadConfig, generate};
+use redb_engine::{RedbConfig, RedbProc};
 use toy_correct::{Mutation, SyncPolicy, ToyConfig, ToyDb};
 
 const USAGE: &str = "\
@@ -27,7 +28,7 @@ kullanım: crashcontract run [seçenekler]
          crashcontract mutants [--seeds A..B]
 
 run — seed aralığını koşar, çökme durumlarını yargılar:
-  --engine toy-correct|toy-mutant:<ad>
+  --engine toy-correct|toy-mutant:<ad>|redb
                                   test edilen motor (varsayılan: toy-correct)
   --seeds A..B                    seed aralığı, B hariç (varsayılan: 0..100)
   --policy every-commit|on-sync|mixed
@@ -35,6 +36,9 @@ run — seed aralığını koşar, çökme durumlarını yargılar:
   --checkpoint-every N|mixed      toy checkpoint aralığı (varsayılan: mixed = 0 ya da 7)
   --cuts all|N                    kesme seçimi: hepsi ya da seed başına N örnek (varsayılan: all)
   --torn                          sektör seviyesinde yırtık yazmaları da dene
+  --fs-model posix|linux          posix (varsayılan): ad girdisi yalnız dizin fsync'iyle kalıcı;
+                                  linux: yeni dosyanın fsync'i adını da sabitler (DOĞRULANMADI)
+  --skip-open-phase               açılış fazındaki kesmeleri atla (oluşturma hatası ayrı raporlandıysa)
   --jobs N                        paralel iş parçacığı (varsayılan: çekirdek sayısı)
   --workdir DIR                   çalışma dizini (varsayılan: geçici dizin)
   --report-dir DIR                bulgu raporlarının dizini (varsayılan: failures)
@@ -72,6 +76,8 @@ struct RunArgs {
     torn: bool,
     jobs: usize,
     workdir: Option<PathBuf>,
+    fs_linux: bool,
+    skip_open_phase: bool,
     report_dir: PathBuf,
     minimize: bool,
     out: Option<PathBuf>,
@@ -93,6 +99,8 @@ fn parse_run(args: &[String]) -> Result<RunArgs, String> {
         torn: false,
         jobs: std::thread::available_parallelism().map_or(1, |n| n.get()),
         workdir: None,
+        fs_linux: false,
+        skip_open_phase: false,
         report_dir: PathBuf::from("failures"),
         minimize: true,
         out: None,
@@ -106,6 +114,10 @@ fn parse_run(args: &[String]) -> Result<RunArgs, String> {
             }
             "--no-minimize" => {
                 a.minimize = false;
+                continue;
+            }
+            "--skip-open-phase" => {
+                a.skip_open_phase = true;
                 continue;
             }
             _ => {}
@@ -148,6 +160,13 @@ fn parse_run(args: &[String]) -> Result<RunArgs, String> {
             "--jobs" => a.jobs = parse_num::<usize>(flag, v)?.max(1),
             "--workdir" => a.workdir = Some(PathBuf::from(v)),
             "--report-dir" => a.report_dir = PathBuf::from(v),
+            "--fs-model" => {
+                a.fs_linux = match v {
+                    "posix" => false,
+                    "linux" => true,
+                    _ => return Err(format!("--fs-model: bilinmeyen '{v}'")),
+                }
+            }
             "--out" => a.out = Some(PathBuf::from(v)),
             "--seed" => {
                 let n: u64 = parse_num(flag, v)?;
@@ -160,7 +179,7 @@ fn parse_run(args: &[String]) -> Result<RunArgs, String> {
         Some(name) => {
             Some(Mutation::from_name(name).ok_or_else(|| format!("bilinmeyen mutant '{name}'"))?)
         }
-        None if a.engine == "toy-correct" => None,
+        None if a.engine == "toy-correct" || a.engine == "redb" => None,
         None => return Err(format!("bilinmeyen motor '{}'", a.engine)),
     };
     Ok(a)
@@ -187,9 +206,20 @@ fn run_config(a: &RunArgs) -> RunConfig {
     RunConfig {
         crash: CrashConfig {
             torn_writes: a.torn,
+            fsync_persists_new_dirent: a.fs_linux,
             ..CrashConfig::default()
         },
         cuts: a.cuts,
+        skip_open_phase: a.skip_open_phase,
+    }
+}
+
+/// Seed'in motor tanımı.
+fn engine_spec(a: &RunArgs, seed: u64) -> EngineSpec {
+    if a.engine == "redb" {
+        EngineSpec::Redb(RedbConfig::default())
+    } else {
+        EngineSpec::Toy(toy_config(a, seed))
     }
 }
 
@@ -201,7 +231,7 @@ fn default_workdir(a: &RunArgs, tag: &str) -> PathBuf {
 
 /// Seed'in raporunu üretir (istenirse küçültür) ve yazar; yazılan yolu döndürür.
 fn write_seed_report(a: &RunArgs, seed: u64, workdir: &Path) -> Result<Option<PathBuf>, String> {
-    let engine = EngineSpec::Toy(toy_config(a, seed));
+    let engine = engine_spec(a, seed);
     let started = Instant::now();
     let report = report_for_seed(
         &engine,
@@ -283,11 +313,28 @@ fn cmd_run(args: &[String]) -> Result<ExitCode, String> {
     let a = parse_run(args)?;
     let workdir = default_workdir(&a, "run");
     println!(
-        "crashcontract run: motor={} seed={}..{} kesme={:?} yırtık={} iş={}",
-        a.engine, a.seeds.start, a.seeds.end, a.cuts, a.torn, a.jobs
+        "crashcontract run: motor={} seed={}..{} kesme={:?} yırtık={} fs={} açılış-atla={} iş={}",
+        a.engine,
+        a.seeds.start,
+        a.seeds.end,
+        a.cuts,
+        a.torn,
+        if a.fs_linux { "linux" } else { "posix" },
+        a.skip_open_phase,
+        a.jobs
     );
     let start = Instant::now();
-    let results = run_all::<ToyDb>(&a, &workdir, |seed| toy_config(&a, seed));
+    let results: Vec<(u64, String, Result<SeedOutcome, RunError>)> = if a.engine == "redb" {
+        run_all::<RedbProc>(&a, &workdir, |_| RedbConfig::default())
+            .into_iter()
+            .map(|(s, c, r)| (s, format!("{c:?}"), r))
+            .collect()
+    } else {
+        run_all::<ToyDb>(&a, &workdir, |seed| toy_config(&a, seed))
+            .into_iter()
+            .map(|(s, c, r)| (s, format!("{c:?}"), r))
+            .collect()
+    };
     let elapsed = start.elapsed();
 
     let (mut ops, mut events, mut cuts, mut states) = (0usize, 0usize, 0usize, 0usize);
@@ -318,7 +365,7 @@ fn cmd_run(args: &[String]) -> Result<ExitCode, String> {
     let code = match failures.first() {
         None => ExitCode::SUCCESS,
         Some((seed, cfg, f)) => {
-            println!("\nilk bulgu: seed {seed}  yapılandırma {cfg:?}");
+            println!("\nilk bulgu: seed {seed}  yapılandırma {cfg}");
             match (f.cut, f.crash_point) {
                 (Some(cut), Some(cp)) => println!(
                     "  kesme: {cut} (tamamlanan işlem {}, yarıda: {})",
@@ -422,6 +469,7 @@ fn hunt(m: Mutation, a: &RunArgs, workdir: &Path) -> Result<Hunt, String> {
             ..CrashConfig::default()
         },
         cuts: CutSelection::All,
+        skip_open_phase: false,
     };
     let mut h = Hunt {
         mutation: m,

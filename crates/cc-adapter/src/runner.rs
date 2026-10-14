@@ -43,6 +43,11 @@ pub struct RunConfig {
     pub crash: CrashConfig,
     /// Kesme seçimi.
     pub cuts: CutSelection,
+    /// Açılış fazındaki (ilk işlemden önceki) kesmeleri atla. Motorun oluşturma/açılış hatası ayrı
+    /// raporlandıysa, sonraki her seed'in yine orada durmasını önler — işlem fazı da sınansın.
+    /// Eski raporlarda alan yoktur → `false` (davranış değişmez).
+    #[serde(default)]
+    pub skip_open_phase: bool,
 }
 
 impl Default for RunConfig {
@@ -50,6 +55,7 @@ impl Default for RunConfig {
         RunConfig {
             crash: CrashConfig::default(),
             cuts: CutSelection::All,
+            skip_open_phase: false,
         }
     }
 }
@@ -236,7 +242,14 @@ pub fn run_case<A: StorageAdapter>(
 
     // 3–4. Çökme durumları.
     let guarantees = A::guarantees(config);
-    for cut in select_cuts(trace.events.len(), seed, rc.cuts) {
+    // Açılış fazı atlanacaksa kesmeler [ilk işlemin başı, olay sayısı] aralığından seçilir.
+    let lo = if rc.skip_open_phase {
+        trace.spans.first().map_or(trace.events.len(), |s| s.start)
+    } else {
+        0
+    };
+    let cuts = select_cuts(trace.events.len() - lo, seed, rc.cuts);
+    for cut in cuts.into_iter().map(|c| c + lo) {
         outcome.cuts += 1;
         let cp = trace.crash_point(cut);
         let view = history.crash_view(cp.completed, cp.in_flight);

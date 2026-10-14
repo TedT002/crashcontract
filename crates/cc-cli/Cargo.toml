@@ -24,6 +24,8 @@ cc-adapter = { path = "../cc-adapter" }
 cc-workload = { path = "../cc-workload" }
 # Test edilen motor(lar).
 toy-correct = { path = "../../engines/toy-correct" }
+# Gerçek motor (Aşama 7): redb, ayrı sürücü sürecinde + LD_PRELOAD shim.
+redb-engine = { path = "../../engines/redb-engine" }
 # Bulgu küçültme (ddmin).
 cc-minimize = { path = "../cc-minimize" }
 # serde + serde_json: yeniden oynatılabilir JSON rapor (Aşama 6). JSON'u elle yazmak/okumak

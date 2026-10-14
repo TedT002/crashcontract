@@ -26,6 +26,7 @@ fn run_config(spec: &MutantSpec) -> RunConfig {
             ..CrashConfig::default()
         },
         cuts: CutSelection::All,
+        skip_open_phase: false,
     }
 }
 

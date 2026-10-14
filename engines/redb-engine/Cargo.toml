@@ -1,0 +1,31 @@
+[package]
+name = "redb-engine"
+description = "CrashContract gerçek motor adaptörü: redb, ayrı sürücü sürecinde (LD_PRELOAD shim ile kayıt)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "redb-driver"
+path = "src/bin/redb-driver.rs"
+
+[dependencies]
+# Test edilen gerçek motor (Aşama 7). Yalnız sürücü ikilisi onu çağırır; adaptör süreç dışından konuşur.
+redb = "4"
+# Op/State tipleri ve bayt gösterimi.
+cc-model = { path = "../../crates/cc-model" }
+# StorageAdapter trait'i.
+cc-adapter = { path = "../../crates/cc-adapter" }
+# TraceLog + shim iz formatı okuyucusu.
+cc-trace = { path = "../../crates/cc-trace" }
+# Sürücü protokolü: satır başına bir JSON istek/yanıt (stdin/stdout).
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+# Testler seed'li iş yükü kullanır.
+cc-workload = { path = "../../crates/cc-workload" }

@@ -38,6 +38,12 @@ pub struct CrashConfig {
     pub torn_writes: bool,
     /// Atomik yazılan sektör boyu (bayt).
     pub sector_size: u64,
+    /// Dosya sistemi modeli: `true` ise YENİ oluşturulmuş bir dosyanın `fsync`/`fdatasync`'i onun
+    /// dizin girdisini de kalıcı kılar (ext4/XFS/btrfs'in bildirilen davranışı — bu projede
+    /// DOĞRULANMADI). `false` (varsayılan) = katı POSIX: ad girdisi yalnız dizin fsync'iyle kalıcı.
+    /// Eski raporlarda alan yoktur → `false`.
+    #[serde(default)]
+    pub fsync_persists_new_dirent: bool,
 }
 
 impl Default for CrashConfig {
@@ -47,6 +53,7 @@ impl Default for CrashConfig {
             random_samples: 8,
             torn_writes: false,
             sector_size: 512,
+            fsync_persists_new_dirent: false,
         }
     }
 }
@@ -205,7 +212,7 @@ struct Replay {
 }
 
 impl Replay {
-    fn run(events: &[TraceEvent], cut: usize) -> Result<Replay, CrashError> {
+    fn run(events: &[TraceEvent], cut: usize, cfg: &CrashConfig) -> Result<Replay, CrashError> {
         if cut > events.len() {
             return Err(CrashError::CutOutOfRange {
                 cut,
@@ -274,6 +281,18 @@ impl Replay {
                         .expect("değişmez: known() az önce doğruladı");
                     for (_, op) in r.pending_data.remove(file).unwrap_or_default() {
                         apply_data(content, &op);
+                    }
+                    if cfg.fsync_persists_new_dirent {
+                        // Linux-benzeri model: bu inode'u yaratan bekleyen Link girdileri de kalıcı
+                        // olur (rename/unlink gibi diğer ad işlemleri yine dizin fsync'i bekler).
+                        let (now, still): (Vec<_>, Vec<_>) =
+                            std::mem::take(&mut r.pending_dir).into_iter().partition(
+                                |(_, op)| matches!(op, DirOp::Link { file: f, .. } if f == file),
+                            );
+                        for (_, op) in now {
+                            apply_dir(&mut r.durable_dir, &op);
+                        }
+                        r.pending_dir = still;
                     }
                 }
                 TraceEvent::Rename { from, to } => {
@@ -405,29 +424,30 @@ fn pieces(offset: u64, data: &[u8], sector: u64) -> Vec<(u64, &[u8])> {
 }
 
 /// Kesme anında bekleyen (kalıcılığı belirsiz) işlemlerin olay indeksleri, artan.
+/// Varsayılan (katı POSIX) model kullanılır; bkz. [`CrashConfig::fsync_persists_new_dirent`].
 pub fn pending_ops(events: &[TraceEvent], cut: usize) -> Result<Vec<usize>, CrashError> {
-    Ok(Replay::run(events, cut)?.pending())
+    Ok(Replay::run(events, cut, &CrashConfig::default())?.pending())
 }
 
-/// `(events, cut, choice)` → tek dizin görüntüsü. Aşama 6 `replay` bu üçlüyü saklar.
-/// Yırtık yazmada sektör boyu [`CrashConfig::default`]'tan (512) farklıysa [`crash_states`]'in
-/// ürettiği seçimler için aynı boyla [`build_image_with_sector`] kullanılmalıdır.
+/// `(events, cut, choice)` → tek dizin görüntüsü, varsayılan modelle (katı POSIX, 512 B sektör).
+/// Aşama 6 `replay` bu üçlüyü saklar; durumu farklı bir [`CrashConfig`] ile ürettiyseniz
+/// [`build_image_with`] kullanın.
 pub fn build_image(
     events: &[TraceEvent],
     cut: usize,
     choice: &Choice,
 ) -> Result<Image, CrashError> {
-    build_image_with_sector(events, cut, choice, CrashConfig::default().sector_size)
+    build_image_with(events, cut, choice, &CrashConfig::default())
 }
 
-/// [`build_image`], açık sektör boyuyla.
-pub fn build_image_with_sector(
+/// [`build_image`], açık model (sektör boyu, dizin girdisi kuralı) ile.
+pub fn build_image_with(
     events: &[TraceEvent],
     cut: usize,
     choice: &Choice,
-    sector_size: u64,
+    cfg: &CrashConfig,
 ) -> Result<Image, CrashError> {
-    Replay::run(events, cut)?.image(choice, sector_size)
+    Replay::run(events, cut, cfg)?.image(choice, cfg.sector_size)
 }
 
 /// SplitMix64 — iş yükü üreteciyle aynı sabitler; algoritma sürümler arası sabit kalmalı
@@ -455,7 +475,7 @@ pub fn crash_states(
     seed: u64,
     cfg: &CrashConfig,
 ) -> Result<Vec<CrashState>, CrashError> {
-    let replay = Replay::run(events, cut)?;
+    let replay = Replay::run(events, cut, cfg)?;
     let p = replay.pending();
     let n = p.len();
     let subset = |pick: &dyn Fn(usize) -> bool| -> Vec<usize> {
