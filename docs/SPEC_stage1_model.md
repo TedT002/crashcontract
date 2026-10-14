@@ -9,7 +9,7 @@
 
 ## 0. Bu aşamanın kapsamı ve kararları
 
-1. **Workspace kökü proje köküdür** (`/home/tedt/Desktop/rüya`). CLAUDE.md'deki `crashcontract/`
+1. **Workspace kökü proje köküdür** (depo kökü). CLAUDE.md'deki `crashcontract/`
    klasörü deponun kendisidir; ekstra bir alt klasör açılmaz.
 2. **Yalnızca `crates/cc-model` oluşturulur.** Diğer crate'ler (cc-trace, cc-workload, cc-adapter,
    cc-minimize, cc-shim, cc-cli, engines/*) **kendi aşamalarında** eklenir.
@@ -33,7 +33,7 @@
 ## 1. Dizin / Bileşen Yapısı (birebir)
 
 ```
-/home/tedt/Desktop/rüya/
+crashcontract/   (depo kökü)
 ├── CLAUDE.md                      (mevcut, DOKUNMA)
 ├── Cargo.toml                     (sanal workspace manifesti)
 ├── Cargo.lock                     (ilk derlemede oluşur; depoya dahil edilir — CI --locked kullanır)
