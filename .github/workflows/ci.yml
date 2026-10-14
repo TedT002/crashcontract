@@ -24,5 +24,10 @@ jobs:
         run: cargo fmt --all -- --check
       - name: clippy
         run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      # cargo test cdylib'in .so dosyasını üretmez (ölçüldü); redb testleri LD_PRELOAD için
+      # libcc_shim.so ve redb-driver ikilisine ihtiyaç duyar → önce aynı profille derle.
+      - name: build
+        run: cargo build --workspace --locked
+      # Mutant yakalama testleri ve failures/*.json raporlarının replay'i de burada koşar.
       - name: test
         run: cargo test --workspace --locked

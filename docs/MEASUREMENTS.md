@@ -76,6 +76,44 @@ Toplam: 385 → 22 işlem (**%94,3 küçülme**; `accept-corrupt-record` hariç 
 sınırlarını kaydırıyor ve yırtılma artık kaydın ortasına düşmüyor — minimizer sınıf değiştiren adayı
 reddetti (doğru davranış).
 
+## Aşama 7 — gerçek motor: redb 4.3.0 (2026-10-14)
+
+**Ölçüm (strace, nm):** veri dosyasına dosya destekli `mmap` 0, `clone` 0; çağrılar `openat(O_CREAT)`,
+`ftruncate` (1.056.768 B ön tahsis), `pwrite64` (320 B başlık + 4 KiB sayfa), commit başına `fdatasync`,
+`pread64`, `flock`/`fcntl`/`statx`, `close`; `fsync` ve dizin fsync'i **yok**. Ayrıntı:
+`docs/SPEC_stage7_real_engine.md`.
+
+**Shim ↔ strace paritesi:** 300 işlemlik rastgele iş yükü (değer ≤ 3 KiB, txn, silme, sync): strace 2.148
+veri dosyası olayı, shim 2.148; tür, ofset, uzunluk ve sıra birebir aynı; iki koşunun son veri dosyası
+bayt bayt aynı.
+
+| Komut (release, 20 iş parçacığı) | Seed | Kesme | Çökme durumu | Bulgulu seed | Süre |
+|----------------------------------|------|-------|--------------|--------------|------|
+| `run --engine redb --fs-model linux --skip-open-phase --cuts 40 --seeds 0..200` | 200 | 8.000 | 130.938 | **0** | 738,3 sn¹ |
+| `run --engine redb --fs-model linux --skip-open-phase --torn --cuts 20 --seeds 0..40 --jobs 12` | 40 | 800 | 13.024 | **0** | 136,3 sn¹ |
+| `run --engine redb --skip-open-phase --cuts 40 --seeds 0..40` (katı POSIX) | 40 | 74 | 258 | 40/40 (LostDurableWrite) | 6,1 sn |
+
+¹ Koşuların bir kısmı test paketiyle eşzamanlıydı; süreler şişkindir. redb'de her çökme durumu yeni bir
+süreç + ~1 MiB dosya materyalizasyonu demektir (toy'a göre ~250× yavaş).
+
+**Bulgular:** (1) `Database::create` sırasında çökme → dosya kalıcı olarak açılamaz ("Not a redb
+database: magic number mismatch"); araç 0 işlemlik karşı örnek üretti (`failures/redb-create-crash-
+seed0.json`, kesme 2: oluşturma + ön tahsis kalıcı, başlık yok). Araçtan bağımsız doğrulama:
+`strace -e inject=pwrite64:signal=SIGKILL:when=N` → N=1 ve N=2'de yeniden açılış başarısız, N=3'te
+(magic yazıldıktan sonra) başarılı. (2) Katı POSIX'te dizin fsync'i eksikliği: ilk ACK'li commit sonrası
+dosyanın adı kaybolabilir (`failures/redb-posix-dirent-seed0.json`, 1 işlem). Linux modelinde (yeni
+dosyanın fdatasync'i adı da sabitler — doğrulanmamış varsayım) işlem fazında bulgu yok.
+
+**Derleme profili:** redb'nin `debug_assertions` dalları disk görüntüsünü değiştiriyordu (aynı koşuda
+debug/release başlığında 48 bayt fark → replay yalnız aynı profilde bire birdi). `[profile.dev.package.redb]
+debug-assertions = false` ile iki profilin raporu eşit (doğrulandı).
+
+## Son regresyon (Aşama 8, 2026-10-14)
+
+Tüm değişikliklerden sonra: `cargo test --workspace` 154/154; `crashcontract mutants` tablosu Aşama 5 ile
+aynı; `run --seeds 0..1000 --cuts all` 1.400.625 durum, 0 bulgu (28,7 sn); `failures/` 9 raporun 9'u
+bire bir replay.
+
 ## Aşama 3 — mutant ön kontrolü (elle enjekte, geri alındı)
 
 `engines/toy-correct/tests/crash.rs` duman testi (18 seed, tüm kesmeler, yırtık geçişi dahil) altı hata
